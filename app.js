@@ -1,4 +1,5 @@
 // create an express app
+var aes256 = require('aes256');
 const express = require("express")
 const app = express()
 var data;
@@ -8,14 +9,14 @@ const pass = require('node-forge');
 // setting the information for SQL
 try{
   data = require("./Login.json");
-  //const SQL_HOST = johnny.heliohost.org;
- // const SQL_USER =
+
 }catch{
   data = {
     host: process.env.SQL_HOST,
     user: process.env.SQL_USER,
     password: process.env.SQL_Pass,
-    database: process.env.SQL_DATABASE
+    database: process.env.SQL_DATABASE,
+    privateKey: process.env.PRIVATE_KEY
   }
 }
 
@@ -71,12 +72,13 @@ app.get("/login", function(req,res) {
         res.end("unfound");
       }else{
         storedHash = result[0].passHash;
+        let token = aes256.encrypt(password, data.privateKey);
 
         if(passHash === storedHash){  // password is correct
           if(result[0].admin === 1){
-            res.end("Admin");
+            res.end("admin," + token);
           }else{
-            res.end("Writer");
+            res.end("writer," + token);
           }
         }else{                  //password is incorrect
           res.end("incorrect");
