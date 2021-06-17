@@ -7,12 +7,14 @@ var data;
 // setting the information for SQL
 try{
   data = require("./Login.json");
+  //const SQL_HOST = johnny.heliohost.org;
+ // const SQL_USER =
 }catch{
   data = {
     host: process.env.SQL_HOST,
     user: process.env.SQL_USER,
     password: process.env.SQL_Pass,
-    database: process.env.SQL_DATABASE,
+    database: process.env.SQL_DATABASE
   }
 }
 
@@ -20,10 +22,10 @@ try{
 var mysql = require('mysql');
 var pool  = mysql.createPool({
   connectionLimit : 10,
-  host            : '',
-  user            : 'cwenweb_sql',
-  password        : 'secret',
-  database        : 'cwenweb_CWENWEB'
+  host            : data.host,
+  user            : data.user,
+  password        : data.password,
+  database        : data.database
 });
 
 // use the express-static middleware
@@ -35,8 +37,8 @@ app.get("/", function (req, res) {
 })
 
 app.get("/login", function(req,res) {
-  console.log(data);
-  res.send("Login Page");
+  console.log(data.host);
+  res.send(data);
 })
 
 // start the server listening for requests
