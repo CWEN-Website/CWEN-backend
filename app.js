@@ -1,8 +1,9 @@
 // create an express app
 const express = require("express")
 const app = express()
-//const data = require("./Login.json");
 var data;
+const salt = require('node-forge');
+const pass = require('node-forge');
 
 // setting the information for SQL
 try{
@@ -37,8 +38,52 @@ app.get("/", function (req, res) {
 })
 
 app.get("/login", function(req,res) {
- // console.log(data.host);
-  res.send("Login");
+  const{username, password} = req.query;
+  let saltGenerator = salt.md.sha256.create();
+  let passHashGenerator = pass.md.sha256.create();
+  let saltedPassword;
+  let passHash;
+  let queryLogin = "SELECT * FROM login WHERE username = ?"
+  let inserts = [];
+  let storedHash;     //password hash in the database
+
+  saltGenerator.update(username); //generate a salt from their username
+
+  saltedPassword = password + saltGenerator.digest().toHex(); //add the salt onto the password.
+
+  passHashGenerator.update(saltedPassword);
+
+  passHash = passHashGenerator.digest().toHex();        //generate a hash of the salted password
+
+  inserts[0] = username;
+
+  queryLogin = mysql.format(queryLogin, inserts);
+
+
+  pool.query(queryLogin, (err, result) => {
+    if(err){
+      console.log(queryLogin);
+      console.log(err);
+      return res.end("err");
+    }else{
+      //the username does not exist
+      if(result.length === 0){
+        res.end("unfound");
+      }else{
+        storedHash = result[0].passHash;
+
+        if(passHash === storedHash){  // password is correct
+          if(result[0].admin === 1){
+            res.end("Admin");
+          }else{
+            res.end("Writer");
+          }
+        }else{                  //password is incorrect
+          res.end("incorrect");
+        }
+      }
+    }
+  })
 })
 
 // start the server listening for requests
