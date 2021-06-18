@@ -1,34 +1,33 @@
 var aes256 = require('aes256');
 const express = require("express")
-const app = express()
+const app = express();
+const dotenv = require('dotenv');
+dotenv.config();
 var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
 
 const fs = require('fs');
 const S3 = require('aws-sdk/clients/s3');
+var bucketName, region, accessKeyId, secretAccessKey
 
-// setting the information for SQL
-try{
-  data = require("./Login.json");
+// setting the information for SQL and s3
 
-}catch{
-  data = {
-    host: process.env.SQL_HOST,
-    user: process.env.SQL_USER,
-    password: process.env.SQL_Pass,
-    database: process.env.SQL_DATABASE,
-    privateKey: process.env.PRIVATE_KEY,
-    bucketName = process.env.AWS_BUCKET_NAME,
-    region = process.env.AWS_BUCKET_REGION,
-    accessKeyId = process.env.AWS_ACCESS_KEY,
-    secretAccessKey = process.env.AWS_SECRET_KEY,
-  }
-
-  
+data = {
+  host: process.env.SQL_HOST,
+  user: process.env.SQL_USER,
+  password: process.env.SQL_Pass,
+  database: process.env.SQL_DATABASE,
+  privateKey: process.env.PRIVATE_KEY,
 }
 
+bucketName = process.env.AWS_BUCKET_NAME;
+region = process.env.AWS_BUCKET_REGION;
+accessKeyId = process.env.AWS_ACCESS_KEY;
+secretAccessKey = process.env.AWS_SECRET_KEY;
 
+
+// sql connnection
 var mysql = require('mysql');
 var pool  = mysql.createPool({
   connectionLimit : 10,
@@ -38,6 +37,12 @@ var pool  = mysql.createPool({
   database        : data.database
 });
 
+const s3 = new S3({
+  region,
+  accessKeyId,
+  secretAccessKey
+})
+
 // use the express-static middleware
 app.use(express.static("public"))
 
@@ -46,6 +51,7 @@ app.get("/", function (req, res) {
   res.send("<h1>Change</h1>")
 })
 
+// the login page that checks if account and password exist
 app.get("/login", function(req,res) {
   const{username, password} = req.query;
   let saltGenerator = salt.md.sha256.create();
@@ -96,11 +102,41 @@ app.get("/login", function(req,res) {
   })
 })
 
+// example: http://localhost:4000/project_image?projectName=royhe+is+me
+// always use spaces
+app.get("/project_image", function(req,res) {
+  const{projectName} = req.query;
+  const imageName = projectName + ".jpg";
+
+  const readStream = getFileStream(imageName)
+
+  readStream.pipe(res);
+})
+
+
 // uploads a file
 
+function uploadFile(file) {
+  const fileStream = fs.createReadStream(file.path)
 
+  const uploadParams = {
+    Bucket: bucketName,
+    Body: fileStream,
+    Key: file.filename
+  }
+
+  return s3.upload(uploadParams).promise()
+}
 
 // downloads a file
+function getFileStream(fileKey) {
+  const downloadParams = {
+    Key: fileKey,
+    Bucket: bucketName
+  }
+
+  return s3.getObject(downloadParams).createReadStream()
+}
 
 // start the server listening for requests
 app.listen(process.env.PORT || 4000, 
