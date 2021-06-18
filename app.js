@@ -1,10 +1,12 @@
-// create an express app
 var aes256 = require('aes256');
 const express = require("express")
 const app = express()
 var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
+
+const fs = require('fs');
+const S3 = require('aws-sdk/clients/s3');
 
 // setting the information for SQL
 try{
@@ -16,8 +18,14 @@ try{
     user: process.env.SQL_USER,
     password: process.env.SQL_Pass,
     database: process.env.SQL_DATABASE,
-    privateKey: process.env.PRIVATE_KEY
+    privateKey: process.env.PRIVATE_KEY,
+    bucketName = process.env.AWS_BUCKET_NAME,
+    region = process.env.AWS_BUCKET_REGION,
+    accessKeyId = process.env.AWS_ACCESS_KEY,
+    secretAccessKey = process.env.AWS_SECRET_KEY,
   }
+
+  
 }
 
 
@@ -87,6 +95,12 @@ app.get("/login", function(req,res) {
     }
   })
 })
+
+// uploads a file
+
+
+
+// downloads a file
 
 // start the server listening for requests
 app.listen(process.env.PORT || 4000, 
