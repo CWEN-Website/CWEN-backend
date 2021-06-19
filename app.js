@@ -108,9 +108,12 @@ app.get("/project_image", function(req,res) {
   const{projectName} = req.query;
   const imageName = projectName + ".jpg";
 
-  const readStream = getFileStream(imageName)
-
-  readStream.pipe(res);
+  getFilePromise(imageName)
+  .then((stream) => {
+    stream.createReadStream().pipe(res);
+  }).catch(() =>{
+    res.send("404");
+  })
 })
 
 
@@ -129,13 +132,13 @@ function uploadFile(file) {
 }
 
 // downloads a file
-function getFileStream(fileKey) {
+function getFilePromise(fileKey) {
   const downloadParams = {
     Key: fileKey,
     Bucket: bucketName
   }
 
-  return s3.getObject(downloadParams).createReadStream()
+  return s3.getObject(downloadParams).promise(); //.createReadStream()
 }
 
 // start the server listening for requests
