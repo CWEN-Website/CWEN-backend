@@ -140,6 +140,41 @@ function getURL(fileName){
   return url;
 }
 
+// gets a JSON of all the data needed
+app.get("/projectData", function(req,res) {
+  const{projectName} = req.query;
+  // the key of the image in s3
+  const imageName = projectName + ".jpg";
+  //the key of the text file in s3
+  const textName = projectName + ".txt";
+  //gets image url
+
+
+  let data = {
+    "url": null,
+    "text": null
+  };
+
+  data["url"] = getURL(imageName);
+
+  // gets text of the project
+
+  console.log(textName);
+  getFilePromise(textName)
+  .then((stream) => {
+    // gets text of project
+    data["text"] = stream.Body.toString("ascii");
+    res.json(data);
+   // res.send(url);
+  }).catch((error) =>{
+    console.log(error);
+    res.send(404);
+  })
+
+
+
+})
+
 // uploads a file
 
 function uploadFile(file) {
