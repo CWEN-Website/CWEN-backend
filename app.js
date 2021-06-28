@@ -132,8 +132,6 @@ app.get("/url", function(req,res) {
 
 function getURL(fileName){
 
-  //const signedUrlExpireSeconds = 60 * 5
-
   const url = s3.getSignedUrl('getObject', {
     Bucket: bucketName,
     Key: fileName,
@@ -171,7 +169,7 @@ app.get("/projectData", function(req,res) {
    // res.send(url);
   }).catch((error) =>{
     console.log(error);
-    res.send(404);
+    res.send("404");
   })
 
 
