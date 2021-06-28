@@ -12,7 +12,11 @@ const signedUrlExpireSeconds = 60 * 60;
 
 const fs = require('fs');
 const S3 = require('aws-sdk/clients/s3');
+const cors = require('cors');
+
+app.use(cors());
 var bucketName, region, accessKeyId, secretAccessKey
+
 
 // setting the information for SQL and s3
 
@@ -142,6 +146,8 @@ function getURL(fileName){
 }
 
 // gets a JSON of all the data needed
+// example: http://localhost:4000/projectData?projectName=royhe+is+me
+
 app.get("/projectData", function(req,res) {
   const{projectName} = req.query;
   // the key of the image in s3
