@@ -7,6 +7,9 @@ var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
 
+// sets signedURL expired time
+const signedUrlExpireSeconds = 60 * 60;
+
 const fs = require('fs');
 const S3 = require('aws-sdk/clients/s3');
 var bucketName, region, accessKeyId, secretAccessKey
@@ -129,7 +132,7 @@ app.get("/url", function(req,res) {
 
 function getURL(fileName){
 
-  const signedUrlExpireSeconds = 60 * 5
+  //const signedUrlExpireSeconds = 60 * 5
 
   const url = s3.getSignedUrl('getObject', {
     Bucket: bucketName,
