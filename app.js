@@ -122,17 +122,23 @@ app.get("/project_image", function(req,res) {
 app.get("/url", function(req,res) {
   const{projectName} = req.query;
   const imageName = projectName + ".jpg";
+  const url = getURL(imageName);
+
+  res.send(url);
+})
+
+function getURL(fileName){
 
   const signedUrlExpireSeconds = 60 * 5
 
   const url = s3.getSignedUrl('getObject', {
     Bucket: bucketName,
-    Key: imageName,
+    Key: fileName,
     Expires: signedUrlExpireSeconds
   })
 
-  res.send(url);
-})
+  return url;
+}
 
 // uploads a file
 
