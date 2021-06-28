@@ -117,6 +117,23 @@ app.get("/project_image", function(req,res) {
 })
 
 
+// example: http://localhost:4000/url?projectName=royhe+is+me
+// always use spaces
+app.get("/url", function(req,res) {
+  const{projectName} = req.query;
+  const imageName = projectName + ".jpg";
+
+  const signedUrlExpireSeconds = 60 * 5
+
+  const url = s3.getSignedUrl('getObject', {
+    Bucket: bucketName,
+    Key: imageName,
+    Expires: signedUrlExpireSeconds
+  })
+
+  res.send(url);
+})
+
 // uploads a file
 
 function uploadFile(file) {
