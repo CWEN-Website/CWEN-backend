@@ -189,19 +189,38 @@ app.get("/eOfMonth", function(req,res){
   // number of product
   let productNum = 1;
 
+  let monthData = {
+    name: "Martha Stewart",
+    productURLs: []
+  }
 
   const params = {
     Bucket: bucketName,
-    Key: "Month product 1.jpg"
+    Key: "key"
   }
+  
 
-  s3.headObject(params, function (err, metadata) {  
-    if (err && err.code === 'NotFound') {  
-      res.send("not found");
-    } else {  
-      res.send("found!");
-    }
-  });
+
+  
+    let filename = "Month product " + productNum + ".jpg";
+    params.Key = filename;
+    console.log(monthData);
+    
+    
+    s3.headObject(params, function (err, metadata) {  
+      console.log
+      if (err && err.code === 'NotFound') {  
+        exists = false;
+        
+      } else {  
+        // file does exist
+        monthData.productURLs[productNum - 1] = getURL(filename);
+        res.send(monthData);
+        productNum++;
+      }
+
+      console.log(err);
+    });
 })
 
 // uploads a file
