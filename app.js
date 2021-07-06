@@ -179,9 +179,21 @@ app.get("/projectData", function(req,res) {
   })
 })
 
+//TODO add get name from SQL
+app.get("/eOfMonth", function(req,res){
+  let monthData = {
+    name: "Sandra Elobu Ejang",
+    company: "Western Silk Road Limited",
+    picURL: getURL("Woman Entreprenuer of the Month.jpg")
+  }
+
+  res.json(monthData);
+})
 
 
-// gets all data for entrepreunr of the month
+
+// gets url for a entrepreneur of the month product
+// like: http://localhost:4000/eOfMonthProduct?productNum=1
 app.get("/eOfMonthProduct", function(req,res){
   // number of product
   const{productNum} = req.query;
