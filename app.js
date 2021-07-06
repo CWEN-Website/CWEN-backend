@@ -177,9 +177,31 @@ app.get("/projectData", function(req,res) {
     console.log(error);
     res.send("404");
   })
+})
 
 
 
+// gets all data for entrepreunr of the month
+app.get("/eOfMonth", function(req,res){
+  // does the product still exist
+  let exists = true;
+
+  // number of product
+  let productNum = 1;
+
+
+  const params = {
+    Bucket: bucketName,
+    Key: "Month product 1.jpg"
+  }
+
+  s3.headObject(params, function (err, metadata) {  
+    if (err && err.code === 'NotFound') {  
+      res.send("not found");
+    } else {  
+      res.send("found!");
+    }
+  });
 })
 
 // uploads a file
@@ -204,6 +226,17 @@ function getFilePromise(fileKey) {
   }
 
   return s3.getObject(downloadParams).promise(); //.createReadStream()
+}
+
+// checks if a file with a specificed key exists
+function doesFileExist(key){
+  const params = {
+    Bucket: bucketName,
+    Key: key
+  }
+
+  s3.headObject(params).promise(); // check errno with promise
+  return true;
 }
 
 // start the server listening for requests
