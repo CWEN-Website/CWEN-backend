@@ -182,16 +182,13 @@ app.get("/projectData", function(req,res) {
 
 
 // gets all data for entrepreunr of the month
-app.get("/eOfMonth", function(req,res){
-  // does the product still exist
-  let exists = true;
-
+app.get("/eOfMonthProduct", function(req,res){
   // number of product
-  let productNum = 1;
+  const{productNum} = req.query;
 
   let monthData = {
     name: "Martha Stewart",
-    productURLs: []
+    productURLs: ""
   }
 
   const params = {
@@ -199,28 +196,21 @@ app.get("/eOfMonth", function(req,res){
     Key: "key"
   }
   
-
-
+  let filename = "Month product " + productNum + ".jpg";
+  params.Key = filename;
+  console.log(monthData);
   
-    let filename = "Month product " + productNum + ".jpg";
-    params.Key = filename;
-    console.log(monthData);
-    
-    
-    s3.headObject(params, function (err, metadata) {  
-      console.log
-      if (err && err.code === 'NotFound') {  
-        exists = false;
-        
-      } else {  
-        // file does exist
-        monthData.productURLs[productNum - 1] = getURL(filename);
-        res.send(monthData);
-        productNum++;
-      }
-
-      console.log(err);
-    });
+  
+  s3.headObject(params, function (err, metadata) {  
+    console.log
+    if (err && err.code === 'NotFound') {  
+      res.send("404");
+    } else {  
+      // file does exist
+      monthData.productURLs = getURL(filename);
+      res.send(getURL(filename));
+    }
+  });
 })
 
 // uploads a file
