@@ -177,9 +177,52 @@ app.get("/projectData", function(req,res) {
     console.log(error);
     res.send("404");
   })
+})
+
+//TODO add get name from SQL
+app.get("/eOfMonth", function(req,res){
+  let monthData = {
+    name: "Sandra Elobu Ejang",
+    company: "Western Silk Road Limited",
+    picURL: getURL("Woman Entreprenuer of the Month.jpg")
+  }
+
+  res.json(monthData);
+})
 
 
 
+// gets url for a entrepreneur of the month product
+// like: http://localhost:4000/eOfMonthProduct?productNum=1
+app.get("/eOfMonthProduct", function(req,res){
+  // number of product
+  const{productNum} = req.query;
+
+  let monthData = {
+    name: "Martha Stewart",
+    productURLs: ""
+  }
+
+  const params = {
+    Bucket: bucketName,
+    Key: "key"
+  }
+  
+  let filename = "Month product " + productNum + ".jpg";
+  params.Key = filename;
+  console.log(monthData);
+  
+  
+  s3.headObject(params, function (err, metadata) {  
+    console.log
+    if (err && err.code === 'NotFound') {  
+      res.send("404");
+    } else {  
+      // file does exist
+      monthData.productURLs = getURL(filename);
+      res.send(getURL(filename));
+    }
+  });
 })
 
 // uploads a file
@@ -204,6 +247,17 @@ function getFilePromise(fileKey) {
   }
 
   return s3.getObject(downloadParams).promise(); //.createReadStream()
+}
+
+// checks if a file with a specificed key exists
+function doesFileExist(key){
+  const params = {
+    Bucket: bucketName,
+    Key: key
+  }
+
+  s3.headObject(params).promise(); // check errno with promise
+  return true;
 }
 
 // start the server listening for requests
