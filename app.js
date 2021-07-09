@@ -12,6 +12,7 @@ const signedUrlExpireSeconds = 60 * 60;
 
 const fs = require('fs');
 const S3 = require('aws-sdk/clients/s3');
+var aes256 = require('aes256');
 const cors = require('cors');
 
 app.use(cors());
@@ -32,7 +33,7 @@ bucketName = process.env.AWS_BUCKET_NAME;
 region = process.env.AWS_BUCKET_REGION;
 accessKeyId = process.env.AWS_ACCESS_KEY;
 secretAccessKey = process.env.AWS_SECRET_KEY;
-
+encryptionKey = process.env.ENCRYPTION_KEY;
 
 // sql connnection
 var mysql = require('mysql');
@@ -123,9 +124,20 @@ app.get("/project_image", function(req,res) {
   })
 })
 
+// adds a new signup to the sql table
+app.get("/customer_signup", function(req,res){
+
+  var plaintext = 'my plaintext message';
+
+  var encryptedPlainText = aes256.encrypt(encryptionKey, plaintext);
+  var decryptedPlainText = aes256.decrypt(encryptionKey, encryptedPlainText);
+  res.send(decryptedPlainText);
+})
+
 
 // example: http://localhost:4000/url?projectName=royhe+is+me
 // always use spaces
+// gets signed url of an s3 object
 app.get("/url", function(req,res) {
   const{projectName} = req.query;
   const imageName = projectName + ".jpg";
