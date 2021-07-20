@@ -139,7 +139,7 @@ app.get("/reset_request", function(req,res){
 
 
   // query of inserting a token into the table
-  let queryInsertion = "INSERT INTO resetPass VALUES(?,?)"
+  let queryInsertion = "INSERT INTO resetPass VALUES(?,?) ON DUPLICATE KEY UPDATE token = ?"
   
 
   pool.query(queryEmail, (err, results) => {
@@ -158,6 +158,7 @@ app.get("/reset_request", function(req,res){
         // udating insertion query
         inserts[0] = results[0].username;
         inserts[1] = token;
+        inserts[2] = token;
         queryInsertion = mysql.format(queryInsertion, inserts);
 
         pool.query(queryInsertion, (error) => {
