@@ -110,19 +110,7 @@ app.get("/login", function(req,res) {
   })
 })
 
-// example: http://localhost:4000/project_image?projectName=royhe+is+me
-// always use spaces
-app.get("/project_image", function(req,res) {
-  const{projectName} = req.query;
-  const imageName = projectName + ".jpg";
 
-  getFilePromise(imageName)
-  .then((stream) => {
-    stream.createReadStream().pipe(res);
-  }).catch(() =>{
-    res.send("404");
-  })
-})
 
 // adds a new signup to the sql table
 app.get("/customer_signup", function(req,res){
@@ -144,10 +132,13 @@ app.get("/reset_request", function(req,res){
   const tokenGenerator = pass.md.sha256.create();
   
   // query for checking if email exists
-  let queryEmail = "SELECT COUNT(*) AS count FROM login WHERE email = ?"
+  let queryEmail = "SELECT username AS count FROM login WHERE email = ?"
   let inserts = [];
   inserts[0] = email;
   queryEmail = mysql.format(queryEmail, inserts);
+
+
+  // query of inserting a token into the table
 
   pool.query(queryEmail, (err, results) => {
     if(err){
@@ -155,15 +146,34 @@ app.get("/reset_request", function(req,res){
       console.log(err);
       return res.end("err");
     }else{
-      if(results[0].count !== 1){
+      if(results.length !== 1){
         res.send("unfound");
       }else{
-        res.send("found");
+        let tokenSeed = new Date() + results[0].username;
+        tokenGenerator.update(tokenSeed);
+        let token =tokenGenerator.digest().toHex();
+        
+        res.send(token);
       }
     }
   })
 
   
+})
+
+
+// example: http://localhost:4000/project_image?projectName=royhe+is+me
+// always use spaces
+app.get("/project_image", function(req,res) {
+  const{projectName} = req.query;
+  const imageName = projectName + ".jpg";
+
+  getFilePromise(imageName)
+  .then((stream) => {
+    stream.createReadStream().pipe(res);
+  }).catch(() =>{
+    res.send("404");
+  })
 })
 
 
