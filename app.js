@@ -72,7 +72,7 @@ app.get("/login", function(req,res) {
 
   saltGenerator.update(username); //generate a salt from their username
 
-  saltedPassword = password + saltGenerator.digest().toHex(); //add the salt onto the password.
+  saltedPassword = password + saltGenerator.digest().toHex() + "CWEN"; //add the salt onto the password.
 
   passHashGenerator.update(saltedPassword);
 
@@ -132,6 +132,14 @@ app.get("/customer_signup", function(req,res){
   var encryptedPlainText = aes256.encrypt(encryptionKey, plaintext);
   var decryptedPlainText = aes256.decrypt(encryptionKey, encryptedPlainText);
   res.send(decryptedPlainText);
+})
+
+
+// generates a token and emails it to the person who wants to reset their password
+app.get("/reset_request", function(req,res){
+  const{email} = req.query;
+
+  res.send("reset email: " + email);
 })
 
 
