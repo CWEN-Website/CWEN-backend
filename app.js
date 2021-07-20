@@ -184,9 +184,9 @@ app.get("/reset_request", function(req,res){
 
             var mailOptions = {
               from: emailAddress,
-              to: emailAddress,
-              subject: 'Sending Email using Node.js',
-              text: 'That was easy!'
+              to: email,
+              subject: 'Password Reset',
+              text: "Reset your password at " + process.env.SITE_URL + "/reset?token=" + token
             };
 
             transporter.sendMail(mailOptions, function(error, info){
