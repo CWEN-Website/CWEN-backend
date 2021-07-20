@@ -6,6 +6,8 @@ dotenv.config();
 var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
+const nodemailer = require('nodemailer');
+const emailAddress = "website.cwen@gmail.com"
 
 // sets signedURL expired time
 const signedUrlExpireSeconds = 60 * 60;
@@ -43,6 +45,17 @@ var pool  = mysql.createPool({
   user            : data.user,
   password        : data.password,
   database        : data.database
+});
+
+
+// email
+
+var transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: emailAddress,
+    pass: process.env.EMAIL_PASSWORD
+  }
 });
 
 const s3 = new S3({
@@ -168,6 +181,22 @@ app.get("/reset_request", function(req,res){
             console.log(error);
             return res.end("err");
           }else{
+
+            var mailOptions = {
+              from: emailAddress,
+              to: emailAddress,
+              subject: 'Sending Email using Node.js',
+              text: 'That was easy!'
+            };
+
+            transporter.sendMail(mailOptions, function(error, info){
+              if (error) {
+                console.log(error);
+              } else {
+                console.log('Email sent: ' + info.response);
+              }
+            });
+
             res.send("token inserted");
           }
         })
