@@ -144,20 +144,22 @@ app.get("/reset_request", function(req,res){
   const tokenGenerator = pass.md.sha256.create();
   
   // query for checking if email exists
-  let queryLogin = "SELECT COUNT(*) AS count FROM login WHERE email = ?"
+  let queryEmail = "SELECT COUNT(*) AS count FROM login WHERE email = ?"
   let inserts = [];
   inserts[0] = email;
+  queryEmail = mysql.format(queryEmail, inserts);
 
-
-  queryLogin = mysql.format(queryLogin, inserts);
-
-  pool.query(queryLogin, (err, results) => {
+  pool.query(queryEmail, (err, results) => {
     if(err){
-      console.log(queryLogin);
+      console.log(queryEmail);
       console.log(err);
       return res.end("err");
     }else{
-      res.send("result: " + results[0].count);
+      if(results[0].count !== 1){
+        res.send("unfound");
+      }else{
+        res.send("found");
+      }
     }
   })
 
