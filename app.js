@@ -132,13 +132,15 @@ app.get("/reset_request", function(req,res){
   const tokenGenerator = pass.md.sha256.create();
   
   // query for checking if email exists
-  let queryEmail = "SELECT username AS count FROM login WHERE email = ?"
+  let queryEmail = "SELECT username FROM login WHERE email = ?"
   let inserts = [];
   inserts[0] = email;
   queryEmail = mysql.format(queryEmail, inserts);
 
 
   // query of inserting a token into the table
+  let queryInsertion = "INSERT INTO resetPass VALUES(?,?)"
+  
 
   pool.query(queryEmail, (err, results) => {
     if(err){
@@ -152,8 +154,22 @@ app.get("/reset_request", function(req,res){
         let tokenSeed = new Date() + results[0].username;
         tokenGenerator.update(tokenSeed);
         let token =tokenGenerator.digest().toHex();
-        
-        res.send(token);
+
+        // udating insertion query
+        inserts[0] = results[0].username;
+        inserts[1] = token;
+        queryInsertion = mysql.format(queryInsertion, inserts);
+
+        pool.query(queryInsertion, (error) => {
+          if(error){
+            console.log(results[0]);
+            console.log(queryInsertion);
+            console.log(error);
+            return res.end("err");
+          }else{
+            res.send("token inserted");
+          }
+        })
       }
     }
   })
