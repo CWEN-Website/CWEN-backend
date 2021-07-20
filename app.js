@@ -137,9 +137,31 @@ app.get("/customer_signup", function(req,res){
 
 // generates a token and emails it to the person who wants to reset their password
 app.get("/reset_request", function(req,res){
+  // email of person who wants to change password
   const{email} = req.query;
 
-  res.send("reset email: " + email);
+  // token gnerator of sha256
+  const tokenGenerator = pass.md.sha256.create();
+  
+  // query for checking if email exists
+  let queryLogin = "SELECT COUNT(*) AS count FROM login WHERE email = ?"
+  let inserts = [];
+  inserts[0] = email;
+
+
+  queryLogin = mysql.format(queryLogin, inserts);
+
+  pool.query(queryLogin, (err, results) => {
+    if(err){
+      console.log(queryLogin);
+      console.log(err);
+      return res.end("err");
+    }else{
+      res.send("result: " + results[0].count);
+    }
+  })
+
+  
 })
 
 
