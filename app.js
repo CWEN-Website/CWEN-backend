@@ -1,17 +1,20 @@
 var aes256 = require('aes256');
-const express = require("express")
+const express = require("express");
 const app = express();
 const dotenv = require('dotenv');
 dotenv.config();
 var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
+const nodemailer = require('nodemailer');
+const emailAddress = "website.cwen@gmail.com"
 
 // sets signedURL expired time
 const signedUrlExpireSeconds = 60 * 60;
 
 const fs = require('fs');
 const S3 = require('aws-sdk/clients/s3');
+var aes256 = require('aes256');
 const cors = require('cors');
 
 app.use(cors());
@@ -32,7 +35,7 @@ bucketName = process.env.AWS_BUCKET_NAME;
 region = process.env.AWS_BUCKET_REGION;
 accessKeyId = process.env.AWS_ACCESS_KEY;
 secretAccessKey = process.env.AWS_SECRET_KEY;
-
+encryptionKey = process.env.ENCRYPTION_KEY;
 
 // sql connnection
 var mysql = require('mysql');
@@ -41,7 +44,19 @@ var pool  = mysql.createPool({
   host            : data.host,
   user            : data.user,
   password        : data.password,
-  database        : data.database
+  database        : data.database,
+  multipleStatements: true
+});
+
+
+// email
+
+var transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: emailAddress,
+    pass: process.env.EMAIL_PASSWORD
+  }
 });
 
 const s3 = new S3({
@@ -71,7 +86,7 @@ app.get("/login", function(req,res) {
 
   saltGenerator.update(username); //generate a salt from their username
 
-  saltedPassword = password + saltGenerator.digest().toHex(); //add the salt onto the password.
+  saltedPassword = password + saltGenerator.digest().toHex() + "CWEN"; //add the salt onto the password.
 
   passHashGenerator.update(saltedPassword);
 
@@ -93,10 +108,10 @@ app.get("/login", function(req,res) {
         res.end("unfound");
       }else{
         storedHash = result[0].passHash;
-        let token = aes256.encrypt(password, data.privateKey);
+        let token = aes256.encrypt(saltedPassword, data.privateKey);
 
         if(passHash === storedHash){  // password is correct
-          if(result[0].admin === 1){
+          if(result[0].isAdmin === 1){
             res.end("admin," + token);
           }else{
             res.end("writer," + token);
@@ -108,6 +123,144 @@ app.get("/login", function(req,res) {
     }
   })
 })
+
+
+
+// adds a new signup to the sql table
+app.get("/customer_signup", function(req,res){
+
+  var plaintext = 'my plaintext message';
+
+  var encryptedPlainText = aes256.encrypt(encryptionKey, plaintext);
+  var decryptedPlainText = aes256.decrypt(encryptionKey, encryptedPlainText);
+  res.send(decryptedPlainText);
+})
+
+
+// generates a token and emails it to the person who wants to reset their password
+app.get("/reset_request", function(req,res){
+  // email of person who wants to change password
+  const{email} = req.query;
+
+  // token gnerator of sha256
+  const tokenGenerator = pass.md.sha256.create();
+  
+  // query for checking if email exists
+  let queryEmail = "SELECT username FROM login WHERE email = ?"
+  let inserts = [];
+  inserts[0] = email;
+  queryEmail = mysql.format(queryEmail, inserts);
+
+
+  // query of inserting a token into the table
+  let queryInsertion = "INSERT INTO resetPass VALUES(?,?) ON DUPLICATE KEY UPDATE token = ?"
+  
+
+  pool.query(queryEmail, (err, results) => {
+    if(err){
+      console.log(queryEmail);
+      console.log(err);
+      return res.end("err");
+    }else{
+      if(results.length !== 1){
+        res.send("unfound");
+      }else{
+        let tokenSeed = new Date() + results[0].username;
+        tokenGenerator.update(tokenSeed);
+        let token =tokenGenerator.digest().toHex();
+
+        // udating insertion query
+        inserts[0] = results[0].username;
+        inserts[1] = token;
+        inserts[2] = token;
+        queryInsertion = mysql.format(queryInsertion, inserts);
+
+        pool.query(queryInsertion, (error) => {
+          if(error){
+            console.log(results[0]);
+            console.log(queryInsertion);
+            console.log(error);
+            return res.end("err");
+          }else{
+
+            var mailOptions = {
+              from: emailAddress,
+              to: email,
+              subject: 'Password Reset',
+              html: "<p>Reset your password <a rel=\"nofollow\" href=\"" + process.env.SITE_URL + "/reset?token=" + token + "\">here</a></p>"
+                  + "<br><p>If the link doesn't work, please paste the following link in your URL </p>"
+                  + "<p>" + process.env.SITE_URL + "/reset?token=" + token + "</p>"
+            };
+
+            transporter.sendMail(mailOptions, function(error, info){
+              if (error) {
+                console.log(error);
+                res.end("email error");
+              } else {
+                console.log('Email sent: ' + info.response);
+                
+              res.send("token and email");
+              }
+            });
+
+          }
+        })
+      }
+    }
+  })
+})
+
+
+app.get("/new_password", function(req, res){
+  const {username, newPass, token} = req.query;
+  let saltGenerator = salt.md.sha256.create();
+  let passHashGenerator = pass.md.sha256.create();
+
+  // query for checking the token status
+  let queryToken = "SELECT COUNT(*) AS count FROM resetPass WHERE username = ? AND token = ?"
+  let inserts = []
+  inserts[0] = username;
+  inserts[1] = token;
+  queryToken = mysql.format(queryToken, inserts);
+
+  // query for updating passhash and deleting the reset entry
+  let queryUpdate = "UPDATE login SET passHash = ? WHERE username = ?; DELETE FROM resetPass WHERE username = ?"
+
+  pool.query(queryToken, (err, results) =>{
+      if(err){
+        console.log(queryEmail);
+        console.log(err);
+        return res.end("err");
+      }else{
+        if(results[0].count === 0){
+          res.send("reject");
+        }else{
+          saltGenerator.update(username);
+
+          saltedPassword = newPass + saltGenerator.digest().toHex() + "CWEN";
+
+          passHashGenerator.update(saltedPassword);
+
+          inserts[0] = passHashGenerator.digest().toHex();
+          inserts[1] = username;
+          inserts[2] = username;
+
+          queryUpdate = mysql.format(queryUpdate, inserts);
+
+          pool.query(queryUpdate, (error) => {
+            if(error){
+              console.log(queryUpdate);
+              console.log(error);
+              return res.end("err");
+            }else{
+              res.send("success");
+            }
+          })
+        }
+      }
+  })
+})
+
 
 // example: http://localhost:4000/project_image?projectName=royhe+is+me
 // always use spaces
@@ -126,6 +279,7 @@ app.get("/project_image", function(req,res) {
 
 // example: http://localhost:4000/url?projectName=royhe+is+me
 // always use spaces
+// gets signed url of an s3 object
 app.get("/url", function(req,res) {
   const{projectName} = req.query;
   const imageName = projectName + ".jpg";
