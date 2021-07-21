@@ -44,7 +44,8 @@ var pool  = mysql.createPool({
   host            : data.host,
   user            : data.user,
   password        : data.password,
-  database        : data.database
+  database        : data.database,
+  multipleStatements: true
 });
 
 
@@ -207,8 +208,57 @@ app.get("/reset_request", function(req,res){
       }
     }
   })
+})
 
-  
+
+app.get("/new_password", function(req, res){
+  const {username, newPass, token} = req.query;
+  let saltGenerator = salt.md.sha256.create();
+  let passHashGenerator = pass.md.sha256.create();
+
+  // query for checking the token status
+  let queryToken = "SELECT COUNT(*) AS count FROM resetPass WHERE username = ? AND token = ?"
+  let inserts = []
+  inserts[0] = username;
+  inserts[1] = token;
+  queryToken = mysql.format(queryToken, inserts);
+
+  // query for updating passhash and deleting the reset entry
+  let queryUpdate = "UPDATE login SET passHash = ? WHERE username = ?; DELETE FROM resetPass WHERE username = ?"
+
+  pool.query(queryToken, (err, results) =>{
+      if(err){
+        console.log(queryEmail);
+        console.log(err);
+        return res.end("err");
+      }else{
+        if(results[0].count === 0){
+          res.send("reject");
+        }else{
+          saltGenerator.update(username);
+
+          saltedPassword = newPass + saltGenerator.digest().toHex() + "CWEN";
+
+          passHashGenerator.update(saltedPassword);
+
+          inserts[0] = passHashGenerator.digest().toHex();
+          inserts[1] = username;
+          inserts[2] = username;
+
+          queryUpdate = mysql.format(queryUpdate, inserts);
+
+          pool.query(queryUpdate, (error) => {
+            if(error){
+              console.log(queryUpdate);
+              console.log(error);
+              return res.end("err");
+            }else{
+              res.send("success");
+            }
+          })
+        }
+      }
+  })
 })
 
 
