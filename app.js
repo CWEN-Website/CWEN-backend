@@ -186,18 +186,22 @@ app.get("/reset_request", function(req,res){
               from: emailAddress,
               to: email,
               subject: 'Password Reset',
-              text: "Reset your password at " + process.env.SITE_URL + "/reset?token=" + token
+              html: "<p>Reset your password <a rel=\"nofollow\" href=\"" + process.env.SITE_URL + "/reset?token=" + token + "\">here</a></p>"
+                  + "<br><p>If the link doesn't work, please paste the following link in your URL </p>"
+                  + "<p>" + process.env.SITE_URL + "/reset?token=" + token + "</p>"
             };
 
             transporter.sendMail(mailOptions, function(error, info){
               if (error) {
                 console.log(error);
+                res.end("email error");
               } else {
                 console.log('Email sent: ' + info.response);
+                
+              res.send("token and email");
               }
             });
 
-            res.send("token inserted");
           }
         })
       }
