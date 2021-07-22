@@ -114,7 +114,7 @@ app.get("/login", function(req,res) {
           if(result[0].isAdmin === 1){
             res.end("admin," + token);
           }else{
-            res.end("writer," + token);
+            res.end("author," + token);
           }
         }else{                  //password is incorrect
           res.end("incorrect");
