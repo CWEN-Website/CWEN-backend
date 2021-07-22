@@ -212,38 +212,37 @@ app.get("/reset_request", function(req,res){
 
 
 app.get("/new_password", function(req, res){
-  const {username, newPass, token} = req.query;
+  const {newPass, token} = req.query;
   let saltGenerator = salt.md.sha256.create();
   let passHashGenerator = pass.md.sha256.create();
 
   // query for checking the token status
-  let queryToken = "SELECT COUNT(*) AS count FROM resetPass WHERE username = ? AND token = ?"
+  let queryToken = "SELECT username FROM resetPass WHERE token = ?"
   let inserts = []
-  inserts[0] = username;
-  inserts[1] = token;
+  inserts[0] = token;
   queryToken = mysql.format(queryToken, inserts);
 
   // query for updating passhash and deleting the reset entry
   let queryUpdate = "UPDATE login SET passHash = ? WHERE username = ?; DELETE FROM resetPass WHERE username = ?"
 
-  pool.query(queryToken, (err, results) =>{
+  pool.query(queryToken, (err, username) =>{
       if(err){
-        console.log(queryEmail);
+        console.log(queryToken);
         console.log(err);
         return res.end("err");
       }else{
-        if(results[0].count === 0){
+        if(username.length === 0){
           res.send("reject");
         }else{
-          saltGenerator.update(username);
+          saltGenerator.update(username[0].username.toString());
 
           saltedPassword = newPass + saltGenerator.digest().toHex() + "CWEN";
 
           passHashGenerator.update(saltedPassword);
 
           inserts[0] = passHashGenerator.digest().toHex();
-          inserts[1] = username;
-          inserts[2] = username;
+          inserts[1] = username[0].username.toString();
+          inserts[2] = username[0].username.toString();
 
           queryUpdate = mysql.format(queryUpdate, inserts);
 
@@ -253,6 +252,7 @@ app.get("/new_password", function(req, res){
               console.log(error);
               return res.end("err");
             }else{
+              console.log(queryUpdate)
               res.send("success");
             }
           })
