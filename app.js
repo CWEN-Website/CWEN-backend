@@ -183,13 +183,15 @@ app.get("/reset_request", function(req,res){
             return res.end("err");
           }else{
 
+            let htmlMessage = "<p>Reset your password <a rel=\"nofollow\" href=\"" + process.env.SITE_URL + "reset?token=" + token + "\">here</a></p>"
+            + "<br><p>If the link doesn't work, please paste the following link in your URL </p>"
+            + "<p>" + process.env.SITE_URL + "reset?token=" + token + "</p>";
+
             var mailOptions = {
               from: emailAddress,
               to: email,
               subject: 'Password Reset',
-              html: "<p>Reset your password <a rel=\"nofollow\" href=\"" + process.env.SITE_URL + "/reset?token=" + token + "\">here</a></p>"
-                  + "<br><p>If the link doesn't work, please paste the following link in your URL </p>"
-                  + "<p>" + process.env.SITE_URL + "/reset?token=" + token + "</p>"
+              html: htmlMessage
             };
 
             transporter.sendMail(mailOptions, function(error, info){
