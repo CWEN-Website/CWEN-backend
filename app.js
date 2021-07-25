@@ -108,7 +108,7 @@ app.get("/login", function(req,res) {
         res.end("unfound");
       }else{
         storedHash = result[0].passHash;
-        let token = aes256.encrypt(saltedPassword, data.privateKey);
+        let token = aes256.encrypt(data.privateKey, saltedPassword);
 
         if(passHash === storedHash){  // password is correct
           if(result[0].isAdmin === 1){
@@ -380,6 +380,47 @@ app.get("/eOfMonthProduct", function(req,res){
     }
   });
 })
+
+
+app.get("/check_token", function(req, res){
+  const {token} = req.query;
+  let queryToken = "SELECT isAdmin FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+  
+
+  queryToken = mysql.format(queryToken, inserts);
+
+  res.send(inserts);
+
+  /*
+  pool.query(queryToken, (err, results) => {
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      if(results.length == 0){
+        // does not exist
+        res.end("unfound");
+      }else if(results[0].isAdmin){
+        // is admin
+        res.end("admin")
+      }else{
+        res.end("writer")
+      }
+    }
+  })*/
+})
+
+
+// function for rearanging the month server.
+// https://stackoverflow.com/questions/47253661/uploading-multiple-files-with-fetch-and-formdata-apis 
+// https://stackoverflow.com/questions/61237355/how-to-save-my-input-values-to-text-file-with-reactjs
+
+
 
 // uploads a file
 
