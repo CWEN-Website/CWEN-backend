@@ -108,7 +108,8 @@ app.get("/login", function(req,res) {
         res.end("unfound");
       }else{
         storedHash = result[0].passHash;
-        let token = aes256.encrypt(data.privateKey, saltedPassword);
+        console.log(passHash);
+        let token = aes256.encrypt(data.privateKey, passHash);
 
         if(passHash === storedHash){  // password is correct
           if(result[0].isAdmin === 1){
