@@ -389,14 +389,14 @@ app.get("/check_token", function(req, res){
 
   let inserts = [];
 
+  // decrypt the token to get the salted hash
   inserts[0] = aes256.decrypt(data.privateKey, token);
   
 
   queryToken = mysql.format(queryToken, inserts);
 
-  res.send(inserts);
 
-  /*
+  
   pool.query(queryToken, (err, results) => {
     if(err){
       console.log(queryToken);
@@ -413,7 +413,7 @@ app.get("/check_token", function(req, res){
         res.end("writer")
       }
     }
-  })*/
+  })
 })
 
 
