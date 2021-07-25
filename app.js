@@ -385,7 +385,7 @@ app.get("/eOfMonthProduct", function(req,res){
 
 app.get("/check_token", function(req, res){
   const {token} = req.query;
-  let queryToken = "SELECT isAdmin FROM login WHERE passHash = ?"
+  let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
 
   let inserts = [];
 
@@ -403,14 +403,32 @@ app.get("/check_token", function(req, res){
       console.log(err);
       return res.end("err");
     }else{
+      let user = {
+        title: "",
+        username: ""
+      }
+
+
       if(results.length == 0){
         // does not exist
         res.end("unfound");
       }else if(results[0].isAdmin){
         // is admin
-        res.end("admin")
+        user = {
+          title: "admin",
+          usernam: results[0].username
+        }
+
+
+        res.json(user)
       }else{
-        res.end("writer")
+        user = {
+          title: "writer",
+          username: results[0].username
+        }
+
+
+        res.json(user)
       }
     }
   })
