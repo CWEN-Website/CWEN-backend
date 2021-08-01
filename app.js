@@ -108,7 +108,8 @@ app.get("/login", function(req,res) {
         res.end("unfound");
       }else{
         storedHash = result[0].passHash;
-        let token = aes256.encrypt(saltedPassword, data.privateKey);
+        console.log(passHash);
+        let token = aes256.encrypt(data.privateKey, passHash);
 
         if(passHash === storedHash){  // password is correct
           if(result[0].isAdmin === 1){
@@ -183,13 +184,15 @@ app.get("/reset_request", function(req,res){
             return res.end("err");
           }else{
 
+            let htmlMessage = "<p>Reset your password <a rel=\"nofollow\" href=\"" + process.env.SITE_URL + "reset?token=" + token + "\">here</a></p>"
+            + "<br><p>If the link doesn't work, please paste the following link in your URL </p>"
+            + "<p>" + process.env.SITE_URL + "reset?token=" + token + "</p>";
+
             var mailOptions = {
               from: emailAddress,
               to: email,
               subject: 'Password Reset',
-              html: "<p>Reset your password <a rel=\"nofollow\" href=\"" + process.env.SITE_URL + "/reset?token=" + token + "\">here</a></p>"
-                  + "<br><p>If the link doesn't work, please paste the following link in your URL </p>"
-                  + "<p>" + process.env.SITE_URL + "/reset?token=" + token + "</p>"
+              html: htmlMessage
             };
 
             transporter.sendMail(mailOptions, function(error, info){
@@ -378,6 +381,81 @@ app.get("/eOfMonthProduct", function(req,res){
     }
   });
 })
+
+
+app.get("/check_token", function(req, res){
+  const {token} = req.query;
+  let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+  
+
+  queryToken = mysql.format(queryToken, inserts);
+
+
+  
+  pool.query(queryToken, (err, results) => {
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      let user = {
+        title: "",
+        username: ""
+      }
+
+
+      if(results.length == 0){
+        // does not exist
+        res.end("unfound");
+      }else if(results[0].isAdmin){
+        // is admin
+        user = {
+          title: "admin",
+          usernam: results[0].username
+        }
+
+
+        res.json(user)
+      }else{
+        user = {
+          title: "writer",
+          username: results[0].username
+        }
+
+
+        res.json(user)
+      }
+    }
+  })
+})
+
+
+// function for rearanging the month server.
+// https://stackoverflow.com/questions/47253661/uploading-multiple-files-with-fetch-and-formdata-apis 
+// https://stackoverflow.com/questions/61237355/how-to-save-my-input-values-to-text-file-with-reactjs
+
+// gets the SQL table for every team member
+app.get("/get_members", function(req, res){
+  let queryMembers = "SELECT * FROM ourTeam";
+
+  pool.query(queryMembers, (err, results) =>{
+    if(err){
+      console.log(err);
+      console.log(queryMembers);
+      res.send("err");
+    }else{
+      res.json(results);
+    }
+  })
+
+})
+
+
 
 // uploads a file
 
