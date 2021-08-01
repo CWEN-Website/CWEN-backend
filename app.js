@@ -441,7 +441,7 @@ app.get("/check_token", function(req, res){
 
 // gets the SQL table for every team member
 app.get("/get_members", function(req, res){
-  let queryMembers = "SELECT * FROM ourTeam";
+  let queryMembers = "SELECT * FROM ourTeam ORDER BY id";
 
   pool.query(queryMembers, (err, results) =>{
     if(err){
