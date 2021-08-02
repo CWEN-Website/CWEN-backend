@@ -8,6 +8,8 @@ const salt = require('node-forge');
 const pass = require('node-forge');
 const nodemailer = require('nodemailer');
 const emailAddress = "website.cwen@gmail.com"
+var multer  = require('multer')
+var upload = multer({ dest: 'uploads/' })
 
 // sets signedURL expired time
 const signedUrlExpireSeconds = 60 * 60;
@@ -529,7 +531,7 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
         inserts[2] = numProducts;
 
         // upload profile picture
-        await uploadFile(req.files['pic'][0]);
+        uploadFile(req.files['pic'][0], "Woman Entreprenuer of the Month.jpg");
 
         // delete all previous products
         for(let i = 0; i < 100; i++){
@@ -538,7 +540,9 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
         }
 
         for(let i = 0; i < numProducts; i++){
-          await uploadFile(req.files['products'][i]);
+          let key = "Month product " + i + ".jpg"
+
+          uploadFile(req.files['products'][i], key);
         }
 
         pool.query(queryToken, (err, results) => {
@@ -557,7 +561,7 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
 })
 
 //deletes a file
-function deleteFile(key){
+async function deleteFile(key){
   const uploadParams = {
     Bucket: bucketName,
     Key: key
@@ -568,7 +572,7 @@ function deleteFile(key){
 
 // uploads a file
 
-function uploadFile(file, fName) {
+async function uploadFile(file, fName) {
   const fileStream = fs.createReadStream(file.path)
 
   const uploadParams = {
@@ -581,7 +585,7 @@ function uploadFile(file, fName) {
 }
 
 // uploads a file that anyone can view
-function uploadPublicFile(file, fName) {
+async function uploadPublicFile(file, fName) {
   const fileStream = fs.createReadStream(file.path)
 
   const uploadParams = {
