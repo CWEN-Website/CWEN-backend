@@ -476,8 +476,7 @@ app.get("/get_members", function(req, res){
 })
 
 
-var cpUpload = upload.fields([{ name: 'pic', maxCount: 1 }, { name: 'products', maxCount: 15 }])
-app.post('/updateMonth', cpUpload, function (req, res, next) {
+app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
   // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
   //
   // e.g.
@@ -489,16 +488,15 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
   const{token, newName, newCompany} = req.query;
  
 
+
   let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
 
-  console.log(token);
 
   let inserts = [];
 
   // decrypt the token to get the salted hash
   inserts[0] = aes256.decrypt(data.privateKey, token);
 
-  console.log(inserts[0])
   
 
   queryToken = mysql.format(queryToken, inserts);
@@ -515,8 +513,7 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
         title: "",
         username: ""
       }
-
-
+          
       if(results.length == 0){
         // does not exist
         res.end("illegal");
@@ -525,13 +522,19 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
       }else{
         // is admin
         let monthQuery = "DELETE FROM eOfMonthTest; INSERT INTO eOfMonthTest VALUES(?,?,?)"
-        let numProducts = req.files['products'].length;
+        
+        
+        let numProducts = req.files.length - 1;
         inserts[0] = newName;
         inserts[1] = newCompany;
         inserts[2] = numProducts;
 
+        monthQuery = mysql.format(monthQuery, inserts);
+
+        console.log("month query: " + monthQuery);
+
         // upload profile picture
-        uploadFile(req.files['pic'][0], "Woman Entreprenuer of the Month.jpg");
+        uploadS3File(req.files[0], "Woman Entreprenuer of the Month.jpg");
 
         // delete all previous products
         for(let i = 0; i < 100; i++){
@@ -539,13 +542,13 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
           deleteFile(key)
         }
 
-        for(let i = 0; i < numProducts; i++){
+        for(let i = 1; i < numProducts; i++){
           let key = "Month product " + i + ".jpg"
 
-          uploadFile(req.files['products'][i], key);
+          uploadS3File(req.files[i], key);
         }
 
-        pool.query(queryToken, (err, results) => {
+        pool.query(monthQuery, (err, results) => {
           if(err){
             console.log(queryToken);
             console.log(err);
@@ -562,7 +565,7 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
 
 //deletes a file
 function deleteFile(key){
-  const uploadParams = {
+  const params = {
     Bucket: bucketName,
     Key: key
   }
@@ -572,16 +575,17 @@ function deleteFile(key){
 
 // uploads a file
 
-function uploadFile(file, fName) {
+function uploadS3File(file, fName) {
   const fileStream = fs.createReadStream(file.path)
 
   const uploadParams = {
     Bucket: bucketName,
     Body: fileStream,
+    ContentType: file.mimetype,
     Key: fName
   }
 
-  return s3.upload(uploadParams).promise()
+  return s3.upload(uploadParams).promise();
 }
 
 // uploads a file that anyone can view
@@ -595,7 +599,7 @@ async function uploadPublicFile(file, fName) {
     ACL: 'public-read'
   }
 
-  return s3.upload(uploadParams).promise()
+
 }
 
 
