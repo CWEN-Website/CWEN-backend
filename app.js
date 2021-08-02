@@ -561,7 +561,7 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
 })
 
 //deletes a file
-async function deleteFile(key){
+function deleteFile(key){
   const uploadParams = {
     Bucket: bucketName,
     Key: key
@@ -572,7 +572,7 @@ async function deleteFile(key){
 
 // uploads a file
 
-async function uploadFile(file, fName) {
+function uploadFile(file, fName) {
   const fileStream = fs.createReadStream(file.path)
 
   const uploadParams = {
