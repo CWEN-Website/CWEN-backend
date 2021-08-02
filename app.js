@@ -528,7 +528,14 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
         inserts[1] = newCompany;
         inserts[2] = numProducts;
 
+        // upload profile picture
         await uploadFile(req.files['pic'][0]);
+
+        // delete all previous products
+        for(let i = 0; i < 100; i++){
+          let key = "Month product " + i + ".jpg"
+          deleteFile(key)
+        }
 
         for(let i = 0; i < numProducts; i++){
           await uploadFile(req.files['products'][i]);
@@ -549,7 +556,15 @@ app.post('/updateMonth', cpUpload, function (req, res, next) {
 
 })
 
+//deletes a file
+function deleteFile(key){
+  const uploadParams = {
+    Bucket: bucketName,
+    Key: key
+  }
 
+  s3.deleteObject(params).promise();
+}
 
 // uploads a file
 
