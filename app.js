@@ -521,7 +521,7 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
         res.end("illegal");
       }else{
         // is admin
-        let monthQuery = "DELETE FROM eOfMonthTest; INSERT INTO eOfMonthTest VALUES(?,?,?)"
+        let monthQuery = "DELETE FROM eOfMonth; INSERT INTO eOfMonth VALUES(?,?,?)"
         
         
         let numProducts = req.files.length - 1;
@@ -541,8 +541,6 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
           let key = "Month product " + i + ".jpg"
           deleteFile(key)
         }
-
-        console.log("num: " + req.files);
 
         for(let i = 1; i <= numProducts; i++){
           let key = "Month product " + i + ".jpg"
