@@ -443,6 +443,22 @@ app.get("/check_token", function(req, res){
 // https://stackoverflow.com/questions/47253661/uploading-multiple-files-with-fetch-and-formdata-apis 
 // https://stackoverflow.com/questions/61237355/how-to-save-my-input-values-to-text-file-with-reactjs
 
+// gets the SQL table for every team member
+app.get("/get_members", function(req, res){
+  let queryMembers = "SELECT * FROM ourTeam ORDER BY id";
+
+  pool.query(queryMembers, (err, results) =>{
+    if(err){
+      console.log(err);
+      console.log(queryMembers);
+      res.send("err");
+    }else{
+      res.json(results);
+    }
+  })
+
+})
+
 
 
 // uploads a file
