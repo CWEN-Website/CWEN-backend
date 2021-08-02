@@ -338,13 +338,26 @@ app.get("/projectData", function(req,res) {
 
 //TODO add get name from SQL
 app.get("/eOfMonth", function(req,res){
-  let monthData = {
-    name: "Sandra Elobu Ejang",
-    company: "Western Silk Road Limited",
-    picURL: getURL("Woman Entreprenuer of the Month.jpg")
-  }
+  let eOfMonthQuery = "SELECT eName,company FROM eOfMonth;"
 
-  res.json(monthData);
+  pool.query(eOfMonthQuery, (err, data) =>{
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      
+      let monthData = {
+        name: data[0].eName,
+        company: data[0].company,
+        picURL: getURL("Woman Entreprenuer of the Month.jpg")
+      }
+    
+      res.json(monthData);
+    }
+  })
+
+  
 })
 
 
