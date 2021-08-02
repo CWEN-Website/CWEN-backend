@@ -387,10 +387,14 @@ app.get("/check_token", function(req, res){
   const {token} = req.query;
   let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
 
+  console.log(token);
+
   let inserts = [];
 
   // decrypt the token to get the salted hash
   inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  console.log(inserts[0])
   
 
   queryToken = mysql.format(queryToken, inserts);
@@ -416,7 +420,7 @@ app.get("/check_token", function(req, res){
         // is admin
         user = {
           title: "admin",
-          usernam: results[0].username
+          username: results[0].username
         }
 
 
@@ -435,7 +439,7 @@ app.get("/check_token", function(req, res){
 })
 
 
-// function for rearanging the month server.
+// function for changing the files for entrepreneur of the month
 // https://stackoverflow.com/questions/47253661/uploading-multiple-files-with-fetch-and-formdata-apis 
 // https://stackoverflow.com/questions/61237355/how-to-save-my-input-values-to-text-file-with-reactjs
 
