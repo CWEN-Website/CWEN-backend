@@ -457,6 +457,7 @@ app.get("/check_token", function(req, res){
 // https://stackoverflow.com/questions/61237355/how-to-save-my-input-values-to-text-file-with-reactjs
 
 // gets the SQL table for every team member
+// https://stackoverflow.com/questions/14375895/aws-s3-node-js-sdk-uploaded-file-and-folder-permissions
 app.get("/get_members", function(req, res){
   let queryMembers = "SELECT * FROM ourTeam ORDER BY id";
 
@@ -473,9 +474,123 @@ app.get("/get_members", function(req, res){
 })
 
 
+var cpUpload = upload.fields([{ name: 'pic', maxCount: 1 }, { name: 'products', maxCount: 15 }])
+app.post('/updateMonth', cpUpload, function (req, res, next) {
+  // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
+  //
+  // e.g.
+  //  req.files['pic'][0] -> File
+  //  req.files['products'] -> Array
+  //
+  // req.body will contain the text fields, if there were any
+
+  const{token, newName, newCompany} = req.query;
+ 
+
+  let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
+
+  console.log(token);
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  console.log(inserts[0])
+  
+
+  queryToken = mysql.format(queryToken, inserts);
+
+
+  
+  pool.query(queryToken, (err, results) => {
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      let user = {
+        title: "",
+        username: ""
+      }
+
+
+      if(results.length == 0){
+        // does not exist
+        res.end("illegal");
+      }else if(!results[0].isAdmin){ // is writer
+        res.end("illegal");
+      }else{
+        // is admin
+        let monthQuery = "DELETE FROM eOfMonthTest; INSERT INTO eOfMonthTest VALUES(?,?,?)"
+        let numProducts = req.files['products'].length;
+        inserts[0] = newName;
+        inserts[1] = newCompany;
+        inserts[2] = numProducts;
+
+        await uploadFile(req.files['pic'][0]);
+
+        for(let i = 0; i < numProducts; i++){
+          await uploadFile(req.files['products'][i]);
+        }
+
+        pool.query(queryToken, (err, results) => {
+          if(err){
+            console.log(queryToken);
+            console.log(err);
+            return res.end("err");
+          }else{
+            res.send("done");
+          }})
+        
+      }
+    }
+  })
+
+})
+
+
 
 // uploads a file
 
+function uploadFile(file, fName) {
+  const fileStream = fs.createReadStream(file.path)
+
+  const uploadParams = {
+    Bucket: bucketName,
+    Body: fileStream,
+    Key: fName
+  }
+
+  return s3.upload(uploadParams).promise()
+}
+
+// uploads a file that anyone can view
+function uploadPublicFile(file, fName) {
+  const fileStream = fs.createReadStream(file.path)
+
+  const uploadParams = {
+    Bucket: bucketName,
+    Body: fileStream,
+    Key: fName,
+    ACL: 'public-read'
+  }
+
+  return s3.upload(uploadParams).promise()
+}
+
+
+// downloads a file
+function getFilePromise(fileKey) {
+  const downloadParams = {
+    Key: fileKey,
+    Bucket: bucketName
+  }
+
+  return s3.getObject(downloadParams).promise(); //.createReadStream()
+}
+
+// upload a file
 function uploadFile(file) {
   const fileStream = fs.createReadStream(file.path)
 
@@ -486,16 +601,6 @@ function uploadFile(file) {
   }
 
   return s3.upload(uploadParams).promise()
-}
-
-// downloads a file
-function getFilePromise(fileKey) {
-  const downloadParams = {
-    Key: fileKey,
-    Bucket: bucketName
-  }
-
-  return s3.getObject(downloadParams).promise(); //.createReadStream()
 }
 
 // checks if a file with a specificed key exists
