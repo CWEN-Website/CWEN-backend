@@ -542,7 +542,9 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
           deleteFile(key)
         }
 
-        for(let i = 1; i < numProducts; i++){
+        console.log("num: " + req.files);
+
+        for(let i = 1; i <= numProducts; i++){
           let key = "Month product " + i + ".jpg"
 
           uploadS3File(req.files[i], key);
@@ -585,7 +587,7 @@ function uploadS3File(file, fName) {
     Key: fName
   }
 
-  return s3.upload(uploadParams).promise();
+  s3.upload(uploadParams).promise();
 }
 
 // uploads a file that anyone can view
@@ -610,7 +612,7 @@ function getFilePromise(fileKey) {
     Bucket: bucketName
   }
 
-  return s3.getObject(downloadParams).promise(); //.createReadStream()
+  s3.getObject(downloadParams).promise(); //.createReadStream()
 }
 
 // upload a file
