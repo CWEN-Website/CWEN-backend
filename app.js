@@ -8,6 +8,8 @@ const salt = require('node-forge');
 const pass = require('node-forge');
 const nodemailer = require('nodemailer');
 const emailAddress = "website.cwen@gmail.com"
+var multer  = require('multer')
+var upload = multer({ dest: 'uploads/' })
 
 // sets signedURL expired time
 const signedUrlExpireSeconds = 60 * 60;
@@ -457,6 +459,7 @@ app.get("/check_token", function(req, res){
 // https://stackoverflow.com/questions/61237355/how-to-save-my-input-values-to-text-file-with-reactjs
 
 // gets the SQL table for every team member
+// https://stackoverflow.com/questions/14375895/aws-s3-node-js-sdk-uploaded-file-and-folder-permissions
 app.get("/get_members", function(req, res){
   let queryMembers = "SELECT * FROM ourTeam ORDER BY id";
 
@@ -473,9 +476,144 @@ app.get("/get_members", function(req, res){
 })
 
 
+app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
+  // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
+  //
+  // e.g.
+  //  req.files['pic'][0] -> File
+  //  req.files['products'] -> Array
+  //
+  // req.body will contain the text fields, if there were any
+
+  const{token, newName, newCompany} = req.query;
+ 
+
+
+  let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
+
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  
+
+  queryToken = mysql.format(queryToken, inserts);
+
+
+  
+  pool.query(queryToken, (err, results) => {
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      let user = {
+        title: "",
+        username: ""
+      }
+          
+      if(results.length == 0){
+        // does not exist
+        res.end("illegal");
+      }else if(!results[0].isAdmin){ // is writer
+        res.end("illegal");
+      }else{
+        // is admin
+        let monthQuery = "DELETE FROM eOfMonth; INSERT INTO eOfMonth VALUES(?,?,?)"
+        
+        
+        let numProducts = req.files.length - 1;
+        inserts[0] = newName;
+        inserts[1] = newCompany;
+        inserts[2] = numProducts;
+
+        monthQuery = mysql.format(monthQuery, inserts);
+
+        console.log("month query: " + monthQuery);
+
+        // upload profile picture
+        uploadS3File(req.files[0], "Woman Entreprenuer of the Month.jpg");
+
+        // delete all previous products
+        for(let i = 0; i < 100; i++){
+          let key = "Month product " + i + ".jpg"
+          deleteFile(key)
+        }
+
+        for(let i = 1; i <= numProducts; i++){
+          let key = "Month product " + i + ".jpg"
+
+          uploadS3File(req.files[i], key);
+        }
+
+        pool.query(monthQuery, (err, results) => {
+          if(err){
+            console.log(queryToken);
+            console.log(err);
+            return res.end("err");
+          }else{
+            res.send("done");
+          }})
+        
+      }
+    }
+  })
+
+})
+
+//deletes a file
+function deleteFile(key){
+  const params = {
+    Bucket: bucketName,
+    Key: key
+  }
+
+  s3.deleteObject(params).promise();
+}
 
 // uploads a file
 
+function uploadS3File(file, fName) {
+  const fileStream = fs.createReadStream(file.path)
+
+  const uploadParams = {
+    Bucket: bucketName,
+    Body: fileStream,
+    ContentType: file.mimetype,
+    Key: fName
+  }
+
+  s3.upload(uploadParams).promise();
+}
+
+// uploads a file that anyone can view
+async function uploadPublicFile(file, fName) {
+  const fileStream = fs.createReadStream(file.path)
+
+  const uploadParams = {
+    Bucket: bucketName,
+    Body: fileStream,
+    Key: fName,
+    ACL: 'public-read'
+  }
+
+
+}
+
+
+// downloads a file
+function getFilePromise(fileKey) {
+  const downloadParams = {
+    Key: fileKey,
+    Bucket: bucketName
+  }
+
+  s3.getObject(downloadParams).promise(); //.createReadStream()
+}
+
+// upload a file
 function uploadFile(file) {
   const fileStream = fs.createReadStream(file.path)
 
@@ -486,16 +624,6 @@ function uploadFile(file) {
   }
 
   return s3.upload(uploadParams).promise()
-}
-
-// downloads a file
-function getFilePromise(fileKey) {
-  const downloadParams = {
-    Key: fileKey,
-    Bucket: bucketName
-  }
-
-  return s3.getObject(downloadParams).promise(); //.createReadStream()
 }
 
 // checks if a file with a specificed key exists
