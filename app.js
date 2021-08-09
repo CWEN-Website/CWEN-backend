@@ -568,6 +568,17 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
 
 })
 
+app.get("/join", function(req, res){
+  const {name, email, phoneNum, buisness, description, region, district, town} = req.query();
+  res.send("join");
+  
+  // create txt filestream.
+
+  // upload filestream to s3.
+
+  // send info to mysql
+})
+
 //deletes a file
 function deleteFile(key){
   const params = {
@@ -603,8 +614,6 @@ async function uploadPublicFile(file, fName) {
     Key: fName,
     ACL: 'public-read'
   }
-
-
 }
 
 
