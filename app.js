@@ -340,7 +340,7 @@ app.get("/projectData", function(req,res) {
 
 //TODO add get name from SQL
 app.get("/eOfMonth", function(req,res){
-  let eOfMonthQuery = "SELECT eName,company FROM eOfMonth;"
+  let eOfMonthQuery = "SELECT * FROM eOfMonth;"
 
   pool.query(eOfMonthQuery, (err, data) =>{
     if(err){
@@ -352,7 +352,8 @@ app.get("/eOfMonth", function(req,res){
       let monthData = {
         name: data[0].eName,
         company: data[0].company,
-        picURL: getURL("Woman Entreprenuer of the Month.jpg")
+        picURL: getURL("Woman Entreprenuer of the Month.jpg"),
+        products: data[0].products
       }
     
       res.json(monthData);

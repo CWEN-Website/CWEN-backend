@@ -23,4 +23,10 @@ yarn-error.log*
 
 /Login.json
 
+# exclude everything
+somefolder/*
+
+# exception to the rule
+!somefolder/.gitkeep 
+
 .env
