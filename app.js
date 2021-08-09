@@ -324,8 +324,6 @@ app.get("/projectData", function(req,res) {
   data["url"] = getURL(imageName);
 
   // gets text of the project
-
-  console.log(textName);
   getFilePromise(textName)
   .then((stream) => {
     // gets text of project
@@ -360,6 +358,7 @@ app.get("/eOfMonth", function(req,res){
         picURL: getURL("Woman Entreprenuer of the Month.jpg"),
         products: dummyArray.map((num) => getURL("Month product " + num + ".jpg"))
       }
+
     
       res.json(monthData);
     }
@@ -611,12 +610,14 @@ async function uploadPublicFile(file, fName) {
 
 // downloads a file
 function getFilePromise(fileKey) {
+  
+
   const downloadParams = {
     Key: fileKey,
     Bucket: bucketName
   }
 
-  s3.getObject(downloadParams).promise(); //.createReadStream()
+  return s3.getObject(downloadParams).promise(); //.createReadStream()
 }
 
 // upload a file
