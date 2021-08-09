@@ -348,13 +348,23 @@ app.get("/eOfMonth", function(req,res){
       console.log(err);
       return res.end("err");
     }else{
+      let dummyArray = []
+      for(let i = 0; i < data[0].products; i++){
+        dummyArray[i] = i + 1;
+      }
+      
       
       let monthData = {
         name: data[0].eName,
         company: data[0].company,
         picURL: getURL("Woman Entreprenuer of the Month.jpg"),
-        products: data[0].products
+        products: dummyArray.map((num) => getURL("Month product " + num + ".jpg"))
       }
+
+      console.log(monthData.products[0]);
+      console.log(monthData.products[1]);
+      console.log(monthData.products[2]);
+      console.log(monthData.products[3]);
     
       res.json(monthData);
     }
