@@ -360,11 +360,6 @@ app.get("/eOfMonth", function(req,res){
         picURL: getURL("Woman Entreprenuer of the Month.jpg"),
         products: dummyArray.map((num) => getURL("Month product " + num + ".jpg"))
       }
-
-      console.log(monthData.products[0]);
-      console.log(monthData.products[1]);
-      console.log(monthData.products[2]);
-      console.log(monthData.products[3]);
     
       res.json(monthData);
     }
