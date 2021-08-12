@@ -569,13 +569,12 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
 })
 
 app.get("/join", function(req, res){
-  const {name, email, phoneNum, buisness, description, region, district, town} = req.query();
-  res.send("join");
+  const {name, email, phoneNum, buisness, description, region, district, town} = req.query;
   
   // create txt filestream.
-
-  // upload filestream to s3.
-
+  let buf = Buffer.from(description);
+  uploadS3Text(buf, "descripton of " + name +"'s buisness.txt", true)
+  .then(res.send("Succes!"));
   // send info to mysql
 })
 
@@ -589,7 +588,26 @@ function deleteFile(key){
   s3.deleteObject(params).promise();
 }
 
-// uploads a file
+
+
+
+// uploads text
+function uploadS3Text(buffer, fName,isPublic) {
+  const uploadParams = {
+    Bucket: bucketName,
+    Body: buffer,
+    Key: fName
+  }
+
+  if(isPublic){
+    uploadParams.ACL = 'public-read'
+  }
+
+  console.log(uploadParams);
+
+  return s3.upload(uploadParams).promise();
+}
+
 
 function uploadS3File(file, fName) {
   const fileStream = fs.createReadStream(file.path)
@@ -614,6 +632,8 @@ async function uploadPublicFile(file, fName) {
     Key: fName,
     ACL: 'public-read'
   }
+
+  s3.upload(uploadParams).promise();
 }
 
 
@@ -627,19 +647,6 @@ function getFilePromise(fileKey) {
   }
 
   return s3.getObject(downloadParams).promise(); //.createReadStream()
-}
-
-// upload a file
-function uploadFile(file) {
-  const fileStream = fs.createReadStream(file.path)
-
-  const uploadParams = {
-    Bucket: bucketName,
-    Body: fileStream,
-    Key: file.filename
-  }
-
-  return s3.upload(uploadParams).promise()
 }
 
 // checks if a file with a specificed key exists
