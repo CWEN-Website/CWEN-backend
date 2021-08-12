@@ -478,7 +478,8 @@ app.get("/get_members", function(req, res){
     }
   })
 
-})
+})//Fathila Nanozi, Head of Programs, https://cwen-storage.s3.us-east-2.amazonaws.com/Fathila+Nanozi.jpg, 2
+
 
 
 app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
@@ -568,13 +569,45 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
 
 })
 
+// http://localhost:4000/join?name=Test+Name&email=testcwenaaa@gmail.com&phoneNum=256123456789&buisness=test+LLP&description=A+Test+for+stuff&region=Northern&district=Buikew&town=Buikew
 app.get("/join", function(req, res){
   const {name, email, phoneNum, buisness, description, region, district, town} = req.query;
+
+  let joinQuery = "INSERT INTO members VALUES(?,?,?,?,?,?,?,?)"
+  let inserts = [];
+
+  inserts[0] = name;
+  inserts[1] = email;
+  inserts[2] = phoneNum;
+  inserts[3] = buisness;
+  inserts[4] = "https://cwen-storage.s3.us-east-2.amazonaws.com/descripton+of+" + email +"'s+buisness.txt";
+  inserts[5] = region;
+  inserts[6] = district;
+  inserts[7] = town;
+  console.log(inserts[4]);
+
+  joinQuery = mysql.format(joinQuery, inserts);
+
+  pool.query(joinQuery, (err, results) => {
+    if(err){
+      if(err.code === "ER_DUP_ENTRY"){
+        res.send("duplicate");
+      }else{
+        console.log(joinQuery);
+        console.log(err.errno);
+        return res.end("err");
+      }
+
+
+    }else{
+        // create txt filestream.
+      let buf = Buffer.from(description);
+      uploadS3Text(buf, "descripton of " + email +"'s buisness.txt", true)
+      .then(res.send("Succes!"));
+    
+    }})
   
-  // create txt filestream.
-  let buf = Buffer.from(description);
-  uploadS3Text(buf, "descripton of " + name +"'s buisness.txt", true)
-  .then(res.send("Succes!"));
+
   // send info to mysql
 })
 
