@@ -611,6 +611,21 @@ app.get("/join", function(req, res){
   // send info to mysql
 })
 
+// get all members
+app.get("/getMembers", function(req, res){
+  let getMembersQuery = "SELECT * FROM members";
+
+  pool.query(getMembersQuery, (err, results) => {
+    if (err){
+      console.log(getMembersQuery);
+        console.log(err.errno);
+        return res.end("err");
+    } else{
+        res.json(results);
+      }
+    })
+})
+
 //deletes a file
 function deleteFile(key){
   const params = {
