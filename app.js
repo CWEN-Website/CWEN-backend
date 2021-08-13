@@ -584,7 +584,6 @@ app.get("/join", function(req, res){
   inserts[5] = region;
   inserts[6] = district;
   inserts[7] = town;
-  console.log(inserts[4]);
 
   joinQuery = mysql.format(joinQuery, inserts);
 
@@ -624,6 +623,31 @@ app.get("/getMembers", function(req, res){
         res.json(results);
       }
     })
+})
+
+app.get("/recieve_contact", function(req, res){
+  const{email, message} = req.query;
+
+  let dateSent = new Date();
+
+  let messageQuery = "INSERT INTO contactUs VALUES(?,?,?)";
+
+  let inserts = [];
+  inserts[0] = dateSent;
+  inserts[1] = "hi"
+  inserts[2] = "there"
+  
+  messageQuery = mysql.format(messageQuery,inserts);
+
+  pool.query(messageQuery, pool.query(messageQuery, (err, results) => {
+    if (err){
+      console.log(messageQuery);
+        console.log(err);
+        return res.end("err");
+    } else{
+        res.send("good");
+      }}))
+    
 })
 
 //deletes a file
