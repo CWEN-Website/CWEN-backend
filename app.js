@@ -594,7 +594,7 @@ app.get("/join", function(req, res){
         res.send("duplicate");
       }else{
         console.log(joinQuery);
-        console.log(err.errno);
+        console.log(err);
         return res.end("err");
       }
 
