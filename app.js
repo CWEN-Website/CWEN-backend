@@ -619,19 +619,20 @@ app.get("/getMembers", function(req, res){
     })
 })
 
-// localhost:4000/recieve_contact?email=royhe62@yahoo.ca&subject=How+can+I+join&message=I+would+like+to+join
+// http://localhost:4000/recieve_contact?name=Roy+He&email=royhe62@yahoo.ca&subject=How+can+I+join&message=I+would+like+to+join
 app.get("/recieve_contact", function(req, res){
-  const{email, subject, message} = req.query;
+  const{name, email, subject, message} = req.query;
 
   let dateSent = new Date();
 
-  let messageQuery = "INSERT INTO contactUs VALUES(?,?,?,?)";
+  let messageQuery = "INSERT INTO contactUs VALUES(?,?,?,?,?)";
 
   let inserts = [];
   inserts[0] = dateSent;
-  inserts[1] = email;
-  inserts[2] = subject;
-  inserts[3] = email + "@" + dateSent + ".txt";
+  inserts[1] = name;
+  inserts[2] = email;
+  inserts[3] = subject;
+  inserts[4] = email + "@" + dateSent + ".txt";
   console.log(inserts[3]);
   
   messageQuery = mysql.format(messageQuery,inserts);
