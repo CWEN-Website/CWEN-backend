@@ -493,10 +493,7 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
 
   const{token, newName, newCompany} = req.query;
  
-
-
   let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
-
 
   let inserts = [];
 
@@ -584,7 +581,6 @@ app.get("/join", function(req, res){
   inserts[5] = region;
   inserts[6] = district;
   inserts[7] = town;
-  console.log(inserts[4]);
 
   joinQuery = mysql.format(joinQuery, inserts);
 
@@ -606,9 +602,6 @@ app.get("/join", function(req, res){
       .then(res.send("Succes!"));
     
     }})
-  
-
-  // send info to mysql
 })
 
 // get all members
@@ -625,6 +618,94 @@ app.get("/getMembers", function(req, res){
       }
     })
 })
+
+// localhost:4000/recieve_contact?email=royhe62@yahoo.ca&subject=How+can+I+join&message=I+would+like+to+join
+app.get("/recieve_contact", function(req, res){
+  const{email, subject, message} = req.query;
+
+  let dateSent = new Date();
+
+  let messageQuery = "INSERT INTO contactUs VALUES(?,?,?,?)";
+
+  let inserts = [];
+  inserts[0] = dateSent;
+  inserts[1] = email;
+  inserts[2] = subject;
+  inserts[3] = email + "@" + dateSent + ".txt";
+  console.log(inserts[3]);
+  
+  messageQuery = mysql.format(messageQuery,inserts);
+
+  pool.query(messageQuery, (err, results) => {
+    if (err){
+      console.log(messageQuery);
+        console.log(err);
+        return res.end("err");
+    } else{
+      let buf = Buffer.from(message);
+      uploadS3Text(buf, email + "@" + dateSent + ".txt", false)
+      .then(res.send("Succes!"));
+    }
+  })
+})
+
+app.get("/get_contact", function(req, res){
+  const{offset} = req.query;
+
+  let offsetNum = parseInt(offset);
+  let contactQuery = "SELECT * FROM contactUs ORDER BY sent LIMIT 10 OFFSET ?"
+  let inserts = [];
+  inserts[0]= offsetNum;
+
+  contactQuery = mysql.format(contactQuery, inserts);
+
+  pool.query(contactQuery, (err, results) => {
+    if (err){
+      console.log(messageQuery);
+        console.log(err);
+        return res.end("err");
+    } else{
+      let downloadParams = {
+        Key: results[0].messageKey,
+        Bucket: bucketName
+      }
+      /*
+      s3.getObject(downloadParams, (err, data) => {
+        if(err){
+          console.log(err);
+          res.send(err);
+        }
+
+        res.send(data.Body.toString('ascii'))
+      })*/
+
+
+      let promises = results.map(content => newGetS3(content.messageKey));
+      let finalPromise = Promise.all(promises).then((content) => {
+        for(let i = 0; i < content.length; i++){
+          results[i].message = content[i];
+        }
+
+        res.json(results);
+      });
+    }})
+})
+
+function newGetS3(fileName){
+  return new Promise((resolve, reject) => {
+    s3.getObject({
+      Bucket: bucketName,
+        Key: fileName
+    }, (err, data) => {
+        if (err){
+          resolve(err)
+        } else { 
+          resolve(data.Body.toString("ascii"))
+        }
+      })
+    })
+}
+
 
 //deletes a file
 function deleteFile(key){
@@ -650,8 +731,6 @@ function uploadS3Text(buffer, fName,isPublic) {
   if(isPublic){
     uploadParams.ACL = 'public-read'
   }
-
-  console.log(uploadParams);
 
   return s3.upload(uploadParams).promise();
 }
@@ -682,6 +761,17 @@ async function uploadPublicFile(file, fName) {
   }
 
   s3.upload(uploadParams).promise();
+}
+
+function getS3Text(fileKey){
+  const downloadParams = {
+    Key: fileKey,
+    Bucket: bucketName
+  }
+
+  
+
+  return s3.getObject(downloadParams).Body
 }
 
 
