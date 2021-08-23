@@ -637,7 +637,7 @@ app.get("/recieve_contact", function(req, res){
   
   messageQuery = mysql.format(messageQuery,inserts);
 
-  let htmlMessage = "<p>Recieved the following message from " + name + " (email:" + email + ") at " + dateSent + ":</p> <p>" + message + "</p>";
+  let htmlMessage = "<p>Recieved the following message from " + name + " (email:" + email + ") at " + dateSent + ":</p> <p>" + message.replace(/[\n\r]/g, '</p><p>') + "</p>";
   console.log(htmlMessage);
 
   var mailOptions = {
@@ -806,6 +806,10 @@ function getFilePromise(fileKey) {
   }
 
   return s3.getObject(downloadParams).promise(); //.createReadStream()
+}
+
+function replaceAll(str){
+
 }
 
 // checks if a file with a specificed key exists
