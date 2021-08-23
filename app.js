@@ -619,7 +619,7 @@ app.get("/getMembers", function(req, res){
     })
 })
 
-// http://localhost:4000/recieve_contact?name=Roy+He&email=royhe62@yahoo.ca&subject=How+can+I+join&message=I+would+like+to+join
+// http://localhost:4000/recieve_contact?name=Roy+He&email=royhe62@yahoo.ca&subject=How+can+I+join&message=Hello+This+Is+A+Test.
 app.get("/recieve_contact", function(req, res){
   const{name, email, subject, message} = req.query;
 
@@ -637,15 +637,36 @@ app.get("/recieve_contact", function(req, res){
   
   messageQuery = mysql.format(messageQuery,inserts);
 
+  let htmlMessage = "<p>Recieved the following message from " + name + " (email:" + email + ") at " + dateSent + ":</p> <p>" + message.replace(/[\n\r]/g, '</p><p>') + "</p>";
+  console.log(htmlMessage);
+
+  var mailOptions = {
+    from: emailAddress,
+    to: "info@cwen.or.ug",
+    cc: "royhe62@yahoo.ca",
+    subject: 'Contact Recieved',
+    html: htmlMessage
+  };
+
   pool.query(messageQuery, (err, results) => {
     if (err){
       console.log(messageQuery);
         console.log(err);
         return res.end("err");
     } else{
-      let buf = Buffer.from(message);
-      uploadS3Text(buf, email + "@" + dateSent + ".txt", false)
-      .then(res.send("Succes!"));
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+          res.end("email error");
+        } else {
+          console.log('Email sent: ' + info.response);
+          
+          let buf = Buffer.from(message);
+          uploadS3Text(buf, email + "@" + dateSent + ".txt", false)
+          .then(res.send("Succes!"));
+        }
+      });
+      
     }
   })
 })
@@ -786,6 +807,10 @@ function getFilePromise(fileKey) {
   }
 
   return s3.getObject(downloadParams).promise(); //.createReadStream()
+}
+
+function replaceAll(str){
+
 }
 
 // checks if a file with a specificed key exists
