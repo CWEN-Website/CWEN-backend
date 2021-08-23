@@ -642,7 +642,8 @@ app.get("/recieve_contact", function(req, res){
 
   var mailOptions = {
     from: emailAddress,
-    to: "royhe62@yahoo.ca",
+    to: "info@cwen.or.ug",
+    cc: "royhe62@yahoo.ca",
     subject: 'Contact Recieved',
     html: htmlMessage
   };
