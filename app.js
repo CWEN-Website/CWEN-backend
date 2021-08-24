@@ -363,8 +363,55 @@ app.get("/eOfMonth", function(req,res){
       res.json(monthData);
     }
   })
+})
 
-  
+// basic info found in sql databases
+app.get("/eOfMonthInfo", function(req, res){
+  let eOfMonthQuery = "SELECT * FROM eOfMonth;"
+
+  pool.query(eOfMonthQuery, (err, data) =>{
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      
+      let monthData = {
+        name: data[0].eName,
+        company: data[0].company,
+        picURL: getURL("Woman Entreprenuer of the Month.jpg"),
+      }
+
+    
+      res.json(monthData);
+    }
+  })
+})
+
+app.get("/eOfMonthBlurb", function(req, res){
+  getS3Text("EofMonthBlurb.txt").then(content => res.send(content))  
+})
+
+app.get("/eOfMonthProducts", function(req, res){
+  let eOfMonthProductsQuery = "SELECT products FROM eOfMonth";
+
+  pool.query(eOfMonthProductsQuery, (err, data) => {
+    if(err){
+      res.send(err);
+    }else{
+      let dummyArray = []
+
+      for(let i = 0; i < data[0].products; i++){
+        dummyArray[i] = i + 1;
+      }
+
+      let productData = {
+        products: dummyArray.map((num) => getURL("Month product " + num + ".jpg"))
+      }
+
+      res.json(productData);
+    }
+  })
 })
 
 
@@ -643,7 +690,6 @@ app.get("/recieve_contact", function(req, res){
   var mailOptions = {
     from: emailAddress,
     to: "info@cwen.or.ug",
-    cc: "royhe62@yahoo.ca",
     subject: 'Contact Recieved',
     html: htmlMessage
   };
@@ -702,7 +748,7 @@ app.get("/get_contact", function(req, res){
       })*/
 
 
-      let promises = results.map(content => newGetS3(content.messageKey));
+      let promises = results.map(content => getS3Text(content.messageKey));
       let finalPromise = Promise.all(promises).then((content) => {
         for(let i = 0; i < content.length; i++){
           results[i].message = content[i];
@@ -713,7 +759,8 @@ app.get("/get_contact", function(req, res){
     }})
 })
 
-function newGetS3(fileName){
+// returns a promise. Use .then((content) -> ... to access text)
+function getS3Text(fileName){
   return new Promise((resolve, reject) => {
     s3.getObject({
       Bucket: bucketName,
@@ -785,16 +832,6 @@ async function uploadPublicFile(file, fName) {
   s3.upload(uploadParams).promise();
 }
 
-function getS3Text(fileKey){
-  const downloadParams = {
-    Key: fileKey,
-    Bucket: bucketName
-  }
-
-  
-
-  return s3.getObject(downloadParams).Body
-}
 
 
 // downloads a file
