@@ -366,8 +366,29 @@ app.get("/eOfMonth", function(req,res){
 })
 
 app.get("/eOfMonthBlurb", function(req, res){
-  getS3Text("EofMonthBlurb.txt").then(content => res.send(content))
-  
+  getS3Text("EofMonthBlurb.txt").then(content => res.send(content))  
+})
+
+app.get("/eOfMonthProducts", function(req, res){
+  let eOfMonthProductsQuery = "SELECT products FROM eOfMonth";
+
+  pool.query(eOfMonthProductsQuery, (err, data) => {
+    if(err){
+      res.send(err);
+    }else{
+      let dummyArray = []
+
+      for(let i = 0; i < data[0].products; i++){
+        dummyArray[i] = i + 1;
+      }
+
+      let productData = {
+        products: dummyArray.map((num) => getURL("Month product " + num + ".jpg"))
+      }
+
+      res.json(productData);
+    }
+  })
 })
 
 
