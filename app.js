@@ -363,7 +363,10 @@ app.get("/eOfMonth", function(req,res){
       res.json(monthData);
     }
   })
+})
 
+app.get("/eOfMonthBlurb", function(req, res){
+  getS3Text("EofMonthBlurb.txt").then(content => res.send(content))
   
 })
 
@@ -701,7 +704,7 @@ app.get("/get_contact", function(req, res){
       })*/
 
 
-      let promises = results.map(content => newGetS3(content.messageKey));
+      let promises = results.map(content => getS3Text(content.messageKey));
       let finalPromise = Promise.all(promises).then((content) => {
         for(let i = 0; i < content.length; i++){
           results[i].message = content[i];
@@ -712,7 +715,8 @@ app.get("/get_contact", function(req, res){
     }})
 })
 
-function newGetS3(fileName){
+// returns a promise. Use .then((content) -> ... to access text)
+function getS3Text(fileName){
   return new Promise((resolve, reject) => {
     s3.getObject({
       Bucket: bucketName,
@@ -784,16 +788,6 @@ async function uploadPublicFile(file, fName) {
   s3.upload(uploadParams).promise();
 }
 
-function getS3Text(fileKey){
-  const downloadParams = {
-    Key: fileKey,
-    Bucket: bucketName
-  }
-
-  
-
-  return s3.getObject(downloadParams).Body
-}
 
 
 // downloads a file
