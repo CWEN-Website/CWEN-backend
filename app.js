@@ -365,6 +365,29 @@ app.get("/eOfMonth", function(req,res){
   })
 })
 
+// basic info found in sql databases
+app.get("/eOfMonthInfo", function(req, res){
+  let eOfMonthQuery = "SELECT * FROM eOfMonth;"
+
+  pool.query(eOfMonthQuery, (err, data) =>{
+    if(err){
+      console.log(queryToken);
+      console.log(err);
+      return res.end("err");
+    }else{
+      
+      let monthData = {
+        name: data[0].eName,
+        company: data[0].company,
+        picURL: getURL("Woman Entreprenuer of the Month.jpg"),
+      }
+
+    
+      res.json(monthData);
+    }
+  })
+})
+
 app.get("/eOfMonthBlurb", function(req, res){
   getS3Text("EofMonthBlurb.txt").then(content => res.send(content))  
 })
