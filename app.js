@@ -819,8 +819,10 @@ app.post("/newBlog", blogUpload, function(req, res){
       uploadS3File(req.files.mainPhoto[0], author + "'s " + title + id + "mainpic.jpg");
 
       // upload photos
-      for(let i = 0; i < req.files.photos.length; i++){
-        uploadS3File(req.files.photos[i], author + "'s " + title + id + "pic" + i)
+      if(req.files.photos !== undefined){
+        for(let i = 0; i < req.files.photos.length; i++){
+          uploadS3File(req.files.photos[i], author + "'s " + title + id + "pic" + i)
+        }
       }
 
       pool.query(blogQuery, function(bErr, bRes){
