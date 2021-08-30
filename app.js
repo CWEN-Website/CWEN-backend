@@ -757,8 +757,8 @@ app.get("/get_contact", function(req, res){
     }})
 })
 
-
-app.post("/newBlog", function(req, res){
+const blogUpload = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPhoto', maxCount: 1 }, { name: 'photos', maxCount: 100 }])
+app.post("/newBlog", blogUpload, function(req, res){
   const{token, title} = req.query;
   let author = "";
   let id = 0;
@@ -810,8 +810,28 @@ app.post("/newBlog", function(req, res){
       inserts[3] = dateUpdated;
 
       blogQuery = mysql.format(blogQuery, inserts);
-      console.log(blogQuery);
-      res.send(token);
+      console.log(req.files.mainPhoto[0]);  
+
+      // upload contentState
+      uploadS3Text(req.body.data, author + "'s " + title + id + ".json");
+
+      // upload mainImage
+      uploadS3File(req.files.mainPhoto[0], author + "'s " + title + id + "mainpic.jpg");
+
+      // upload photos
+      for(let i = 0; i < req.files.photos.length; i++){
+        uploadS3File(req.files.photos[i], author + "'s " + title + id + "pic" + i)
+      }
+
+      pool.query(blogQuery, function(bErr, bRes){
+        if(bErr){
+          console.log(blogQuery);
+          console.log(bErr);
+          res.send("Error");
+        }
+        
+        res.send("Done!");
+      })
     })
   })
 })
