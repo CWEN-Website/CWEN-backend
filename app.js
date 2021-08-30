@@ -454,6 +454,10 @@ app.get("/check_token", function(req, res){
   const {token} = req.query;
   let queryToken = "SELECT username, isAdmin FROM login WHERE passHash = ?"
 
+  if(token === "null"){
+    res.end("unfound");
+  }
+
   console.log(token);
 
   let inserts = [];
