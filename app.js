@@ -1,8 +1,10 @@
 var aes256 = require('aes256');
 const express = require("express");
 const app = express();
+try{
 const dotenv = require('dotenv');
 dotenv.config();
+}catch(e){}
 var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
