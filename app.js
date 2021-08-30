@@ -759,6 +759,13 @@ app.get("/get_contact", function(req, res){
     }})
 })
 
+
+app.post("/newBlog", function(req, res){
+  const{token, title} = req.query;
+  console.log(title);
+  res.send(token);
+})
+
 // returns a promise. Use .then((content) -> ... to access text)
 function getS3Text(fileName){
   return new Promise((resolve, reject) => {
