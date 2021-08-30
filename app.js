@@ -765,7 +765,7 @@ app.post("/newBlog", blogUpload, function(req, res){
   let dateUpdated = new Date();
   
   let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?)";
-  let idQuery = "SELECT COUNT(*) AS numBlogs FROM blogs WHERE author = ?;";
+  let idQuery = "SELECT idNum FROM blogs WHERE author = ? ORDER BY idNum DESC;";
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
@@ -788,9 +788,7 @@ app.post("/newBlog", blogUpload, function(req, res){
     }
 
     author = results[0].username;
-    
 
-    
     inserts[0] = author;
 
     idQuery = mysql.format(idQuery, inserts);
@@ -802,7 +800,12 @@ app.post("/newBlog", blogUpload, function(req, res){
         return res.send("err");
       }
 
-      id = idRes[0].numBlogs + 1;
+      console.log(idRes);
+      if(idRes.length === 0){
+        id = 1;
+      }else{
+        id = idRes[0].idNum + 1;
+      }
 
       inserts[0] = author;
       inserts[1] = id;
@@ -810,7 +813,6 @@ app.post("/newBlog", blogUpload, function(req, res){
       inserts[3] = dateUpdated;
 
       blogQuery = mysql.format(blogQuery, inserts);
-      console.log(req.files.mainPhoto[0]);  
 
       // upload contentState
       uploadS3Text(req.body.data, author + "'s " + title + id + ".json");
