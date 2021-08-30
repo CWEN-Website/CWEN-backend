@@ -7,9 +7,11 @@ var data;
 const salt = require('node-forge');
 const pass = require('node-forge');
 const nodemailer = require('nodemailer');
-const emailAddress = "website.cwen@gmail.com"
-var multer  = require('multer')
+const emailAddress = "website.cwen@gmail.com";
+var multer  = require('multer');
 var upload = multer({ dest: 'uploads/' })
+const { google } = require("googleapis");
+const OAuth2 = google.auth.OAuth2;
 
 // sets signedURL expired time
 const signedUrlExpireSeconds = 60 * 60;
@@ -50,14 +52,50 @@ var pool  = mysql.createPool({
   multipleStatements: true
 });
 
+// OAUTH Configurations
+const oauth2Client = new OAuth2(
+  process.env.GMAIL_OAUTH_CLIENT_ID,
+  process.env.GMAIL_OAUTH_CLIENT_SECRET,
+  "https://developers.google.com/oauthplayground"
+);
+
+oauth2Client.setCredentials({
+  refresh_token: process.env.GMAIL_OAUTH_REFRESH_TOKEN
+});
+
+const createTransporter = async () => {
+  const oauth2Client = new OAuth2(
+    process.env.GMAIL_OAUTH_CLIENT_ID,
+    process.env.GMAIL_OAUTH_CLIENT_SECRET,
+    "https://developers.google.com/oauthplayground"
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GMAIL_OAUTH_REFRESH_TOKEN
+  });
+};
+
+const accessToken = new Promise((resolve, reject) => {
+  oauth2Client.getAccessToken((err, token) => {
+    if (err) {
+      reject("Failed to create access token :(");
+    }
+    resolve(token);
+  });
+});
+
 
 // email
 
-var transporter = nodemailer.createTransport({
-  service: 'gmail',
+const transporter = nodemailer.createTransport({
+  service: "gmail",
   auth: {
+    type: "OAuth2",
     user: emailAddress,
-    pass: process.env.EMAIL_PASSWORD
+    accessToken,
+    clientId: process.env.GMAIL_OAUTH_CLIENT_ID,
+    clientSecret: process.env.GMAIL_OAUTH_CLIENT_SECRET,
+    refreshToken: process.env.GMAIL_OAUTH_REFRESH_TOKEN
   }
 });
 
