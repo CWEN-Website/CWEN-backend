@@ -764,8 +764,8 @@ app.post("/newBlog", function(req, res){
   let id = 0;
   let dateUpdated = new Date();
   
-  let blogQuery = "INSERT INTO blog VALUES(?,?,?,false,?)";
-  let idQuery = "SELECT COUNT(*) AS numBlogs FROM blog WHERE author = ?;";
+  let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?)";
+  let idQuery = "SELECT COUNT(*) AS numBlogs FROM blogs WHERE author = ?;";
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
@@ -790,12 +790,11 @@ app.post("/newBlog", function(req, res){
     author = results[0].username;
     
 
-    // generating an ID
-
+    
     inserts[0] = author;
 
     idQuery = mysql.format(idQuery, inserts);
-
+    // generating an ID
     pool.query(idQuery, (idErr, idRes) => {
       if(idErr){
         console.log(idQuery);
@@ -803,7 +802,7 @@ app.post("/newBlog", function(req, res){
         return res.send("err");
       }
 
-      id = idRes[0].numBlogs;
+      id = idRes[0].numBlogs + 1;
 
       inserts[0] = author;
       inserts[1] = id;
@@ -811,17 +810,10 @@ app.post("/newBlog", function(req, res){
       inserts[3] = dateUpdated;
 
       blogQuery = mysql.format(blogQuery, inserts);
+      console.log(blogQuery);
+      res.send(token);
     })
-
-
-    // creating the blog query
-
-    
-    inserts[1] = Math.random() * Math.pow(2, 31);
   })
-
-  console.log(title);
-  res.send(token);
 })
 
 // returns a promise. Use .then((content) -> ... to access text)
