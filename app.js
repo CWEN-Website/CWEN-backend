@@ -489,8 +489,6 @@ app.get("/check_token", function(req, res){
           title: "admin",
           username: results[0].username
         }
-
-
         res.json(user)
       }else{
         user = {
@@ -762,6 +760,66 @@ app.get("/get_contact", function(req, res){
 
 app.post("/newBlog", function(req, res){
   const{token, title} = req.query;
+  let author = "";
+  let id = 0;
+  let dateUpdated = new Date();
+  
+  let blogQuery = "INSERT INTO blog VALUES(?,?,?,false,?)";
+  let idQuery = "SELECT COUNT(*) AS numBlogs FROM blog WHERE author = ?;";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    author = results[0].username;
+    
+
+    // generating an ID
+
+    inserts[0] = author;
+
+    idQuery = mysql.format(idQuery, inserts);
+
+    pool.query(idQuery, (idErr, idRes) => {
+      if(idErr){
+        console.log(idQuery);
+        console.log(idErr);
+        return res.send("err");
+      }
+
+      id = idRes[0].numBlogs;
+
+      inserts[0] = author;
+      inserts[1] = id;
+      inserts[2] = title;
+      inserts[3] = dateUpdated;
+
+      blogQuery = mysql.format(blogQuery, inserts);
+    })
+
+
+    // creating the blog query
+
+    
+    inserts[1] = Math.random() * Math.pow(2, 31);
+  })
+
   console.log(title);
   res.send(token);
 })
