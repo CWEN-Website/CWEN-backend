@@ -765,7 +765,7 @@ app.post("/newBlog", blogUpload, function(req, res){
   let dateUpdated = new Date();
   
   let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?)";
-  let idQuery = "SELECT idNum FROM blogs WHERE author = ? ORDER BY idNum DESC;";
+  let idQuery = "SELECT idNum FROM blogs WHERE author = ? ORDER BY idNum DESC LIMIT 1;";
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
