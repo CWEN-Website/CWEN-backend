@@ -489,8 +489,6 @@ app.get("/check_token", function(req, res){
           title: "admin",
           username: results[0].username
         }
-
-
         res.json(user)
       }else{
         user = {
@@ -757,6 +755,85 @@ app.get("/get_contact", function(req, res){
         res.json(results);
       });
     }})
+})
+
+const blogUpload = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPhoto', maxCount: 1 }, { name: 'photos', maxCount: 100 }])
+app.post("/newBlog", blogUpload, function(req, res){
+  const{token, title} = req.query;
+  let author = "";
+  let id = 0;
+  let dateUpdated = new Date();
+  
+  let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?)";
+  let idQuery = "SELECT COUNT(*) AS numBlogs FROM blogs WHERE author = ?;";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    author = results[0].username;
+    
+
+    
+    inserts[0] = author;
+
+    idQuery = mysql.format(idQuery, inserts);
+    // generating an ID
+    pool.query(idQuery, (idErr, idRes) => {
+      if(idErr){
+        console.log(idQuery);
+        console.log(idErr);
+        return res.send("err");
+      }
+
+      id = idRes[0].numBlogs + 1;
+
+      inserts[0] = author;
+      inserts[1] = id;
+      inserts[2] = title;
+      inserts[3] = dateUpdated;
+
+      blogQuery = mysql.format(blogQuery, inserts);
+      console.log(req.files.mainPhoto[0]);  
+
+      // upload contentState
+      uploadS3Text(req.body.data, author + "'s " + title + id + ".json");
+
+      // upload mainImage
+      uploadS3File(req.files.mainPhoto[0], author + "'s " + title + id + "mainpic.jpg");
+
+      // upload photos
+      for(let i = 0; i < req.files.photos.length; i++){
+        uploadS3File(req.files.photos[i], author + "'s " + title + id + "pic" + i)
+      }
+
+      pool.query(blogQuery, function(bErr, bRes){
+        if(bErr){
+          console.log(blogQuery);
+          console.log(bErr);
+          res.send("Error");
+        }
+        
+        res.send("Done!");
+      })
+    })
+  })
 })
 
 // returns a promise. Use .then((content) -> ... to access text)
