@@ -945,7 +945,9 @@ app.get("/getBlogMainPhoto", function(req, res){
 
     let awsKey = author + "'s " + title + id + "mainpic.jpg";
 
+    let url = getURL(awsKey)
     
+    res.send(url);
   })
 })
 
