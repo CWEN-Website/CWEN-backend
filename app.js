@@ -975,7 +975,6 @@ app.get("/getBlogPhotos", function(req, res){
       res.send(err);
     }
 
-    console.log(results.length === 0);
 
     if(results.length === 0){
       res.send("unfound");
