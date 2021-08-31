@@ -951,6 +951,45 @@ app.get("/getBlogMainPhoto", function(req, res){
   })
 })
 
+app.get("/getBlogPhotos", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ? AND isPublished = 1)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    let numberArray = [];
+    let numPhotos = results[0].numPhotos;
+    title = results[0].title
+    
+
+    for(let i = 0; i < numPhotos; i++){
+      numberArray[i] = i;
+    }
+
+    let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+
+    res.json(urlArrays);
+  })
+})
+
 // returns a promise. Use .then((content) -> ... to access text)
 function getS3Text(fileName){
   return new Promise((resolve, reject) => {
