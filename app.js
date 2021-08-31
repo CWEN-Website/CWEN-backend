@@ -803,7 +803,7 @@ app.get("/get_contact", function(req, res){
 
 const blogUpload = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPhoto', maxCount: 1 }, { name: 'photos', maxCount: 100 }])
 app.post("/newBlog", blogUpload, function(req, res){
-  const{token, title} = req.query;
+  const{token, title, numPhotos} = req.query;
   let author = "";
   let id = 0;
   let dateUpdated = new Date();
@@ -913,6 +913,38 @@ app.get("/getBlogContent", function(req, res){
     let awsKey = author + "'s " + title + id + ".json";
 
     getS3Text(awsKey).then((json) => JSON.parse(json)).then((content) => res.json(content));
+  })
+})
+
+app.get("/getBlogMainPhoto", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ? AND isPublished = 1)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    title = results[0].title
+
+    let awsKey = author + "'s " + title + id + "mainpic.jpg";
+
+    
   })
 })
 
