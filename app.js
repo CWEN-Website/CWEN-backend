@@ -808,7 +808,7 @@ app.post("/newBlog", blogUpload, function(req, res){
   let id = 0;
   let dateUpdated = new Date();
   
-  let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?)";
+  let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?,?)";
   let idQuery = "SELECT idNum FROM blogs WHERE author = ? ORDER BY idNum DESC LIMIT 1;";
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
@@ -855,6 +855,7 @@ app.post("/newBlog", blogUpload, function(req, res){
       inserts[1] = id;
       inserts[2] = title;
       inserts[3] = dateUpdated;
+      inserts[4] = parseInt(numPhotos);
 
       blogQuery = mysql.format(blogQuery, inserts);
 
