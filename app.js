@@ -912,7 +912,11 @@ app.get("/getBlogContent", function(req, res){
 
       let awsKey = author + "'s " + title + id + ".json";
 
-      getS3Text(awsKey).then((json) => JSON.parse(json)).then((content) => res.json(content));
+      getS3Text(awsKey).then((json) => JSON.parse(json))
+        .then((content) => {
+          content.sqlStuff = results;
+          res.json(content)
+        });
     }
   })
 })
@@ -971,7 +975,6 @@ app.get("/getBlogPhotos", function(req, res){
       res.send(err);
     }
 
-    console.log(results.length === 0);
 
     if(results.length === 0){
       res.send("unfound");
