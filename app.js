@@ -803,12 +803,12 @@ app.get("/get_contact", function(req, res){
 
 const blogUpload = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPhoto', maxCount: 1 }, { name: 'photos', maxCount: 100 }])
 app.post("/newBlog", blogUpload, function(req, res){
-  const{token, title} = req.query;
+  const{token, title, numPhotos} = req.query;
   let author = "";
   let id = 0;
   let dateUpdated = new Date();
   
-  let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?)";
+  let blogQuery = "INSERT INTO blogs VALUES(?,?,?,false,?,?)";
   let idQuery = "SELECT idNum FROM blogs WHERE author = ? ORDER BY idNum DESC LIMIT 1;";
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
@@ -855,6 +855,7 @@ app.post("/newBlog", blogUpload, function(req, res){
       inserts[1] = id;
       inserts[2] = title;
       inserts[3] = dateUpdated;
+      inserts[4] = parseInt(numPhotos);
 
       blogQuery = mysql.format(blogQuery, inserts);
 
@@ -881,6 +882,113 @@ app.post("/newBlog", blogUpload, function(req, res){
         res.send("Done!");
       })
     })
+  })
+})
+
+app.get("/getBlogContent", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ? AND isPublished = 1)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }else{
+      title = results[0].title
+
+      let awsKey = author + "'s " + title + id + ".json";
+
+      getS3Text(awsKey).then((json) => JSON.parse(json)).then((content) => res.json(content));
+    }
+  })
+})
+
+app.get("/getBlogMainPhoto", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ? AND isPublished = 1)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }else{
+      title = results[0].title
+
+      let awsKey = author + "'s " + title + id + "mainpic.jpg";
+
+      let url = getURL(awsKey)
+      
+      res.send(url);
+    }
+  })
+})
+
+app.get("/getBlogPhotos", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ? AND isPublished = 1)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    console.log(results.length === 0);
+
+    if(results.length === 0){
+      res.send("unfound");
+    }else{
+      let numberArray = [];
+      let numPhotos = results[0].numPhotos;
+      title = results[0].title
+      
+
+      for(let i = 0; i < numPhotos; i++){
+        numberArray[i] = i;
+      }
+
+      let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+
+      res.json(urlArrays);
+    }
   })
 })
 
