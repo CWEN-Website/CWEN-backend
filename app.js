@@ -907,13 +907,13 @@ app.get("/getBlogContent", function(req, res){
 
     if(results.length === 0){
       res.send("unfound");
+    }else{
+      title = results[0].title
+
+      let awsKey = author + "'s " + title + id + ".json";
+
+      getS3Text(awsKey).then((json) => JSON.parse(json)).then((content) => res.json(content));
     }
-
-    title = results[0].title
-
-    let awsKey = author + "'s " + title + id + ".json";
-
-    getS3Text(awsKey).then((json) => JSON.parse(json)).then((content) => res.json(content));
   })
 })
 
@@ -939,15 +939,15 @@ app.get("/getBlogMainPhoto", function(req, res){
 
     if(results.length === 0){
       res.send("unfound");
+    }else{
+      title = results[0].title
+
+      let awsKey = author + "'s " + title + id + "mainpic.jpg";
+
+      let url = getURL(awsKey)
+      
+      res.send(url);
     }
-
-    title = results[0].title
-
-    let awsKey = author + "'s " + title + id + "mainpic.jpg";
-
-    let url = getURL(awsKey)
-    
-    res.send(url);
   })
 })
 
@@ -971,22 +971,24 @@ app.get("/getBlogPhotos", function(req, res){
       res.send(err);
     }
 
+    console.log(results.length === 0);
+
     if(results.length === 0){
       res.send("unfound");
+    }else{
+      let numberArray = [];
+      let numPhotos = results[0].numPhotos;
+      title = results[0].title
+      
+
+      for(let i = 0; i < numPhotos; i++){
+        numberArray[i] = i;
+      }
+
+      let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+
+      res.json(urlArrays);
     }
-
-    let numberArray = [];
-    let numPhotos = results[0].numPhotos;
-    title = results[0].title
-    
-
-    for(let i = 0; i < numPhotos; i++){
-      numberArray[i] = i;
-    }
-
-    let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
-
-    res.json(urlArrays);
   })
 })
 
