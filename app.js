@@ -862,7 +862,9 @@ app.post("/newBlog", blogUpload, function(req, res){
       // upload contentState
       uploadS3Text(req.body.data, author + "'s "  +  id + ".json");
 
+      
       // upload mainImage
+
       uploadS3File(req.files.mainPhoto[0], author + "'s "  + id + "mainpic.jpg");
 
       // upload photos
@@ -1166,6 +1168,7 @@ const blogUpdate = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPh
 // photos is the photos in the blog
 app.post("/updateBlog", blogUpdate, function(req, res){
   const{token, id, title} = req.query;
+  console.log(req.query);
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
@@ -1187,13 +1190,16 @@ app.post("/updateBlog", blogUpdate, function(req, res){
       res.send("unfound");
     }
 
-    let author = results[0].author
+    let author = results[0].username
+    console.log(results[0]);
 
     // upload contentState
     uploadS3Text(req.body.data, author + "'s " + id + ".json");
 
     // upload mainImage
-    uploadS3File(req.files.mainPhoto[0], author + "'s " + id + "mainpic.jpg");
+    if(req.files.mainPhoto !== undefined){
+      uploadS3File(req.files.mainPhoto[0], author + "'s " + id + "mainpic.jpg");
+    }
 
     //TODO how to update images
 
@@ -1210,7 +1216,8 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     inserts[1] = author;
     inserts[2] = id;
 
-    mysql.format(updateQuery,inserts);
+    updateQuery = mysql.format(updateQuery,inserts);
+    console.log(inserts);
 
     pool.query(updateQuery, (updateErr, updateResults) =>{
       if(updateErr){
