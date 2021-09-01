@@ -914,7 +914,7 @@ app.get("/getBlogContent", function(req, res){
 
       getS3Text(awsKey).then((json) => JSON.parse(json))
         .then((content) => {
-          content.sqlStuff = results;
+          content.sqlStuff = results[0];
           res.json(content)
         });
     }
@@ -993,6 +993,172 @@ app.get("/getBlogPhotos", function(req, res){
       res.json(urlArrays);
     }
   })
+})
+
+app.get("/getUnpublishedBlogContent", function(req, res){ 
+  const{token,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    author = results[0].username;
+    inserts[0] = author;
+    inserts[1] = parseInt(id);
+
+    blogQuery = mysql.format(blogQuery, inserts)
+    pool.query(blogQuery, (err, results) => {
+      if(err){
+        console.log(blogQuery);
+        console.log(err);
+        res.send(err);
+      }
+
+      if(results.length === 0){
+        res.send("unfound");
+      }else{
+        title = results[0].title
+
+        let awsKey = author + "'s " + title + id + ".json";
+
+        getS3Text(awsKey).then((json) => JSON.parse(json))
+          .then((content) => {
+            content.sqlStuff = results[0];
+            res.json(content)
+          })
+      }
+    })
+  })
+  
+})
+
+app.get("/getUnpublishedBlogMainPhoto", function(req, res){ 
+  const{token,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    author = results[0].username;
+    inserts[0] = author;
+    inserts[1] = parseInt(id);
+
+    blogQuery = mysql.format(blogQuery, inserts)
+    pool.query(blogQuery, (err, results) => {
+      if(err){
+        console.log(blogQuery);
+        console.log(err);
+        res.send(err);
+      }
+  
+      if(results.length === 0){
+        res.send("unfound");
+      }else{
+        title = results[0].title
+  
+        let awsKey = author + "'s " + title + id + "mainpic.jpg";
+  
+        let url = getURL(awsKey)
+        
+        res.send(url);
+      }
+    })
+  })
+  
+})
+
+
+app.get("/getUnpublishedBlogPhotos", function(req, res){ 
+  const{token,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    author = results[0].username;
+    inserts[0] = author;
+    inserts[1] = parseInt(id);
+
+    blogQuery = mysql.format(blogQuery, inserts)
+    pool.query(blogQuery, (err, results) => {
+      if(err){
+        console.log(blogQuery);
+        console.log(err);
+        res.send(err);
+      }
+  
+  
+      if(results.length === 0){
+        res.send("unfound");
+      }else{
+        let numberArray = [];
+        let numPhotos = results[0].numPhotos;
+        title = results[0].title
+        
+  
+        for(let i = 0; i < numPhotos; i++){
+          numberArray[i] = i;
+        }
+        
+  
+        let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+        console.log(urlArrays);
+  
+        res.json(urlArrays);
+      }
+    })
+  })
+  
 })
 
 // returns a promise. Use .then((content) -> ... to access text)
