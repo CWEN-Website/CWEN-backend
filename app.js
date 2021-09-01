@@ -1439,7 +1439,6 @@ app.get("/publish", function(req, res){
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
   let inserts = [];
-  console.log(token);
 
   // decrypt the token to get the salted hash
   inserts[0] = aes256.decrypt(data.privateKey, token);
@@ -1464,7 +1463,7 @@ app.get("/publish", function(req, res){
 
     publishquery = mysql.format(publishquery, inserts);
 
-    pool.query(publishquery, (error, res) => {
+    pool.query(publishquery, (error, resu) => {
       if(error){
         console.log(publishquery);
         console.log(error);
@@ -1483,7 +1482,6 @@ app.get("/unpublish", function(req, res){
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
   let inserts = [];
-  console.log(token);
 
   // decrypt the token to get the salted hash
   inserts[0] = aes256.decrypt(data.privateKey, token);
@@ -1508,7 +1506,7 @@ app.get("/unpublish", function(req, res){
 
     publishquery = mysql.format(publishquery, inserts);
 
-    pool.query(publishquery, (error, res) => {
+    pool.query(publishquery, (error, resu) => {
       if(error){
         console.log(publishquery);
         console.log(error);
