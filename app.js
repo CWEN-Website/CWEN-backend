@@ -1529,7 +1529,7 @@ app.get("/recentBlogs", function(req, res){
       res.send("err");
     }
 
-    let urls = results.map((row) => getURL(results[0].username + "'s "  + row.idNum + "mainpic.jpg"));
+    let urls = results.map((row) => getURL(row.author + "'s "  + row.idNum + "mainpic.jpg"));
     //author + "'s "  + id + "mainpic.jpg");
 
     for(let i = 0; i < urls.length; i++){
@@ -1555,13 +1555,14 @@ app.get("/searchBlogs", function(req, res){
       res.send("err");
     }
 
-    let urls = results.map((row) => getURL(results[0].username + "'s "  + row.idNum + "mainpic.jpg"));
+    let urls = results.map((row) => getURL(row.author + "'s "  + row.idNum + "mainpic.jpg"));
     //author + "'s "  + id + "mainpic.jpg");
+    let keys = results.map((row) => (row.author + "'s "  + row.idNum + "mainpic.jpg"))
+    console.log(keys)
 
     for(let i = 0; i < urls.length; i++){
       results[i].mainPicURL = urls[i];
     }
-    console.log(blogQuery);
 
     res.json(results);
   })
