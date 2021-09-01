@@ -536,7 +536,7 @@ app.get("/check_token", function(req, res){
         res.json(user)
       }else{
         user = {
-          title: "writer",
+          title: "author",
           username: results[0].username
         }
 
@@ -609,7 +609,7 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
       if(results.length == 0){
         // does not exist
         res.end("illegal");
-      }else if(!results[0].isAdmin){ // is writer
+      }else if(!results[0].isAdmin){ // is author
         res.end("illegal");
       }else{
         // is admin
