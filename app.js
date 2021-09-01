@@ -575,8 +575,8 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
   // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
   //
   // e.g.
-  //  req.files['pic'][0] -> File
-  //  req.files['products'] -> Array
+  //  req.files.pic[0] -> File
+  //  req.files.products -> Array
   //
   // req.body will contain the text fields, if there were any
 
@@ -860,15 +860,15 @@ app.post("/newBlog", blogUpload, function(req, res){
       blogQuery = mysql.format(blogQuery, inserts);
 
       // upload contentState
-      uploadS3Text(req.body.data, author + "'s " + title + id + ".json");
+      uploadS3Text(req.body.data, author + "'s "  +  id + ".json");
 
       // upload mainImage
-      uploadS3File(req.files.mainPhoto[0], author + "'s " + title + id + "mainpic.jpg");
+      uploadS3File(req.files.mainPhoto[0], author + "'s "  + id + "mainpic.jpg");
 
       // upload photos
       if(req.files.photos !== undefined){
         for(let i = 0; i < req.files.photos.length; i++){
-          uploadS3File(req.files.photos[i], author + "'s " + title + id + "pic" + i)
+          uploadS3File(req.files.photos[i], author + "'s "  + id + "pic" + i)
         }
       }
 
@@ -910,7 +910,7 @@ app.get("/getBlogContent", function(req, res){
     }else{
       title = results[0].title
 
-      let awsKey = author + "'s " + title + id + ".json";
+      let awsKey = author + "'s "  + id + ".json";
 
       getS3Text(awsKey).then((json) => JSON.parse(json))
         .then((content) => {
@@ -946,7 +946,7 @@ app.get("/getBlogMainPhoto", function(req, res){
     }else{
       title = results[0].title
 
-      let awsKey = author + "'s " + title + id + "mainpic.jpg";
+      let awsKey = author + "'s "  + id + "mainpic.jpg";
 
       let url = getURL(awsKey)
       
@@ -988,7 +988,7 @@ app.get("/getBlogPhotos", function(req, res){
         numberArray[i] = i;
       }
 
-      let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+      let urlArrays = numberArray.map((element) => getURL(author + "'s "  + id + "pic" + element))
 
       res.json(urlArrays);
     }
@@ -1037,7 +1037,7 @@ app.get("/getUnpublishedBlogContent", function(req, res){
       }else{
         title = results[0].title
 
-        let awsKey = author + "'s " + title + id + ".json";
+        let awsKey = author + "'s "  + id + ".json";
 
         getS3Text(awsKey).then((json) => JSON.parse(json))
           .then((content) => {
@@ -1092,7 +1092,7 @@ app.get("/getUnpublishedBlogMainPhoto", function(req, res){
       }else{
         title = results[0].title
   
-        let awsKey = author + "'s " + title + id + "mainpic.jpg";
+        let awsKey = author + "'s "  + id + "mainpic.jpg";
   
         let url = getURL(awsKey)
         
@@ -1151,7 +1151,7 @@ app.get("/getUnpublishedBlogPhotos", function(req, res){
         }
         
   
-        let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+        let urlArrays = numberArray.map((element) => getURL(author + "'s "  + id + "pic" + element))
   
         res.json(urlArrays);
       }
@@ -1160,8 +1160,72 @@ app.get("/getUnpublishedBlogPhotos", function(req, res){
   
 })
 
+const blogUpdate = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPhoto', maxCount: 1 }, { name: 'photos', maxCount: 100 }])
+// body is the contentstate
+// mainPhoto is the main blog photo
+// photos is the photos in the blog
+app.post("/updateBlog", blogUpdate, function(req, res){
+  const{token, id, title} = req.query;
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    let author = results[0].author
+
+    // upload contentState
+    uploadS3Text(req.body.data, author + "'s " + id + ".json");
+
+    // upload mainImage
+    uploadS3File(req.files.mainPhoto[0], author + "'s " + id + "mainpic.jpg");
+
+    //TODO how to update images
+
+
+    // copy all images gotten from aws
+
+
+    // update n
+
+
+    // update title
+    let updateQuery = "UPDATE blogs SET title = ? WHERE author = ? AND idNum = ?"
+    inserts[0] = title;
+    inserts[1] = author;
+    inserts[2] = id;
+
+    mysql.format(updateQuery,inserts);
+
+    pool.query(updateQuery, (updateErr, updateResults) =>{
+      if(updateErr){
+        console.log(updateQuery);
+        console.log(updateErr);
+        res.send("err");
+      }else{
+        res.send("Done!");
+      }
+    })
+  })
+})
+
 app.get("/copyTest", function(req,res){
-  copyS3Object("Young Women Entrepreneurs' Bootc=mp.jpg", "Young Women Entrepreneurs' Bootcamp Copy.jpg")
+  copyS3Object("royhe62's Various Things6pic1", "royhe62's 6pic1")
     .then((data) => res.send(data))
     .catch((err) => res.send(err));
 })
