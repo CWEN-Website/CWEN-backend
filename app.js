@@ -1161,8 +1161,9 @@ app.get("/getUnpublishedBlogPhotos", function(req, res){
 })
 
 app.get("/copyTest", function(req,res){
-  copyS3Object("Young Women Entrepreneurs' Bootcamp.jpg", "Young Women Entrepreneurs' Bootcamp Copy.jpg")
+  copyS3Object("Young Women Entrepreneurs' Bootc=mp.jpg", "Young Women Entrepreneurs' Bootcamp Copy.jpg")
     .then((data) => res.send(data))
+    .catch((err) => res.send(err));
 })
 
 function copyS3Object(sourceKey, destKey){
