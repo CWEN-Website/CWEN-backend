@@ -1152,7 +1152,6 @@ app.get("/getUnpublishedBlogPhotos", function(req, res){
         
   
         let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
-        console.log(urlArrays);
   
         res.json(urlArrays);
       }
@@ -1160,6 +1159,21 @@ app.get("/getUnpublishedBlogPhotos", function(req, res){
   })
   
 })
+
+app.get("/copyTest", function(req,res){
+  copyS3Object("Young Women Entrepreneurs' Bootcamp.jpg", "Young Women Entrepreneurs' Bootcamp Copy.jpg")
+    .then((data) => res.send(data))
+})
+
+function copyS3Object(sourceKey, destKey){
+  let source = "/" + bucketName + "/" + sourceKey;
+  var params = {
+    Bucket: bucketName,
+    CopySource: source, 
+    Key: destKey
+   };
+   return s3.copyObject(params).promise()
+}
 
 // returns a promise. Use .then((content) -> ... to access text)
 function getS3Text(fileName){
@@ -1176,6 +1190,7 @@ function getS3Text(fileName){
       })
     })
 }
+
 
 
 //deletes a file
