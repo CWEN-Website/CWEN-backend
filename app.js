@@ -536,7 +536,7 @@ app.get("/check_token", function(req, res){
         res.json(user)
       }else{
         user = {
-          title: "writer",
+          title: "author",
           username: results[0].username
         }
 
@@ -575,8 +575,8 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
   // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
   //
   // e.g.
-  //  req.files['pic'][0] -> File
-  //  req.files['products'] -> Array
+  //  req.files.pic[0] -> File
+  //  req.files.products -> Array
   //
   // req.body will contain the text fields, if there were any
 
@@ -609,7 +609,7 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
       if(results.length == 0){
         // does not exist
         res.end("illegal");
-      }else if(!results[0].isAdmin){ // is writer
+      }else if(!results[0].isAdmin){ // is author
         res.end("illegal");
       }else{
         // is admin
@@ -860,15 +860,17 @@ app.post("/newBlog", blogUpload, function(req, res){
       blogQuery = mysql.format(blogQuery, inserts);
 
       // upload contentState
-      uploadS3Text(req.body.data, author + "'s " + title + id + ".json");
+      uploadS3Text(req.body.data, author + "'s "  +  id + ".json");
 
+      
       // upload mainImage
-      uploadS3File(req.files.mainPhoto[0], author + "'s " + title + id + "mainpic.jpg");
+
+      uploadS3File(req.files.mainPhoto[0], author + "'s "  + id + "mainpic.jpg");
 
       // upload photos
       if(req.files.photos !== undefined){
         for(let i = 0; i < req.files.photos.length; i++){
-          uploadS3File(req.files.photos[i], author + "'s " + title + id + "pic" + i)
+          uploadS3File(req.files.photos[i], author + "'s "  + id + "pic" + i)
         }
       }
 
@@ -910,11 +912,11 @@ app.get("/getBlogContent", function(req, res){
     }else{
       title = results[0].title
 
-      let awsKey = author + "'s " + title + id + ".json";
+      let awsKey = author + "'s "  + id + ".json";
 
       getS3Text(awsKey).then((json) => JSON.parse(json))
         .then((content) => {
-          content.sqlStuff = results;
+          content.sqlStuff = results[0];
           res.json(content)
         });
     }
@@ -946,7 +948,7 @@ app.get("/getBlogMainPhoto", function(req, res){
     }else{
       title = results[0].title
 
-      let awsKey = author + "'s " + title + id + "mainpic.jpg";
+      let awsKey = author + "'s "  + id + "mainpic.jpg";
 
       let url = getURL(awsKey)
       
@@ -988,12 +990,308 @@ app.get("/getBlogPhotos", function(req, res){
         numberArray[i] = i;
       }
 
-      let urlArrays = numberArray.map((element) => getURL(author + "'s " + title + id + "pic" + element))
+      let urlArrays = numberArray.map((element) => getURL(author + "'s "  + id + "pic" + element))
 
       res.json(urlArrays);
     }
   })
 })
+
+app.get("/getUnpublishedBlogContent", function(req, res){ 
+  const{token,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    author = results[0].username;
+    inserts[0] = author;
+    inserts[1] = parseInt(id);
+
+    blogQuery = mysql.format(blogQuery, inserts)
+    pool.query(blogQuery, (err, results) => {
+      if(err){
+        console.log(blogQuery);
+        console.log(err);
+        res.send(err);
+      }
+
+      if(results.length === 0){
+        res.send("unfound");
+      }else{
+        title = results[0].title
+
+        let awsKey = author + "'s "  + id + ".json";
+
+        getS3Text(awsKey).then((json) => JSON.parse(json))
+          .then((content) => {
+            content.sqlStuff = results[0];
+            res.json(content)
+          })
+      }
+    })
+  })
+  
+})
+
+app.get("/getUnpublishedBlogMainPhoto", function(req, res){ 
+  const{token,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    author = results[0].username;
+    inserts[0] = author;
+    inserts[1] = parseInt(id);
+
+    blogQuery = mysql.format(blogQuery, inserts)
+    pool.query(blogQuery, (err, results) => {
+      if(err){
+        console.log(blogQuery);
+        console.log(err);
+        res.send(err);
+      }
+  
+      if(results.length === 0){
+        res.send("unfound");
+      }else{
+        title = results[0].title
+  
+        let awsKey = author + "'s "  + id + "mainpic.jpg";
+  
+        let url = getURL(awsKey)
+        
+        res.send(url);
+      }
+    })
+  })
+  
+})
+
+
+app.get("/getUnpublishedBlogPhotos", function(req, res){ 
+  const{token,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)";
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    author = results[0].username;
+    inserts[0] = author;
+    inserts[1] = parseInt(id);
+
+    blogQuery = mysql.format(blogQuery, inserts)
+    pool.query(blogQuery, (err, results) => {
+      if(err){
+        console.log(blogQuery);
+        console.log(err);
+        res.send(err);
+      }
+  
+  
+      if(results.length === 0){
+        res.send("unfound");
+      }else{
+        let numberArray = [];
+        let numPhotos = results[0].numPhotos;
+        title = results[0].title
+        
+  
+        for(let i = 0; i < numPhotos; i++){
+          numberArray[i] = i;
+        }
+        
+  
+        let urlArrays = numberArray.map((element) => getURL(author + "'s "  + id + "pic" + element))
+  
+        res.json(urlArrays);
+      }
+    })
+  })
+  
+})
+
+const blogUpdate = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPhoto', maxCount: 1 }, { name: 'photos', maxCount: 100 }])
+// body is the contentstate
+// mainPhoto is the main blog photo
+// photos is the photos in the blog
+app.post("/updateBlog", blogUpdate, function(req, res){
+  const{token, id, title} = req.query;
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    let author = results[0].username
+
+    // upload contentState
+    uploadS3Text(req.body.data, author + "'s " + id + ".json");
+
+    // upload mainImage
+    if(req.files.mainPhoto !== undefined){
+      uploadS3File(req.files.mainPhoto[0], author + "'s " + id + "mainpic.jpg");
+    }
+
+    //TODO how to update images
+
+
+    // copy all images gotten from aws
+
+    let map = JSON.parse(req.body.data).entityMap;
+    let entityIndex = 0;
+    let imageIndex = 0;
+
+    // we have to start at the end, and move back to the front
+    // setting the indexes properly
+    while(map[entityIndex] !== undefined){
+      if(map[entityIndex].type === "IMAGE"){
+        imageIndex++;
+      }
+      entityIndex++;
+    }
+    entityIndex--;
+    imageIndex--;
+    let usedKeysSet = new Set();
+    
+    // we are now working on copying the things
+
+    while(map[entityIndex] !== undefined){
+      let entity = map[entityIndex];
+            
+      if(entity.originalIndex !== undefined){
+        // this was stored in the aws s3 already. Move it to its new place
+        // author + "'s "  + id + "pic" + i
+        let oldKey = author + "'s "  + id + "pic" + entity.originalIndex
+        let newKey = author + "'s "  + id + "pic" + imageIndex;
+        usedKeysSet.add(imageIndex);
+        copyS3Object(oldKey, newKey);
+      }
+
+      if(entity.type === "IMAGE"){
+        imageIndex--;
+      }
+
+      entityIndex--;
+    }
+
+
+    // just add the photos raw. The rest will figure it out
+    imageIndex = 0;
+
+    for(let i = 0; i < req.files.photos.length; i++){
+      while(usedKeysSet.has(imageIndex)){
+        imageIndex++;
+      }
+
+      uploadS3File(req.files.photos[i], author + "'s "  + id + "pic" + imageIndex);
+    }
+
+    // update title
+    let updateQuery = "UPDATE blogs SET title = ? WHERE author = ? AND idNum = ?"
+    inserts[0] = title;
+    inserts[1] = author;
+    inserts[2] = id;
+
+    updateQuery = mysql.format(updateQuery,inserts);
+
+    pool.query(updateQuery, (updateErr, updateResults) =>{
+      if(updateErr){
+        console.log(updateQuery);
+        console.log(updateErr);
+        res.send("err");
+      }else{
+        res.send("Done!");
+      }
+    })
+  })
+})
+
+app.get("/copyTest", function(req,res){
+  copyS3Object("royhe62's Various Things6pic1", "royhe62's 6pic1")
+    .then((data) => res.send(data))
+    .catch((err) => res.send(err));
+})
+
+function copyS3Object(sourceKey, destKey){
+  let source = "/" + bucketName + "/" + sourceKey;
+
+  if(sourceKey === destKey){
+    return "same";
+  }
+  var params = {
+    Bucket: bucketName,
+    CopySource: source, 
+    Key: destKey
+   };
+   return s3.copyObject(params).promise()
+}
 
 // returns a promise. Use .then((content) -> ... to access text)
 function getS3Text(fileName){
@@ -1010,6 +1308,7 @@ function getS3Text(fileName){
       })
     })
 }
+
 
 
 //deletes a file
