@@ -1540,6 +1540,33 @@ app.get("/recentBlogs", function(req, res){
   })
 })
 
+app.get("/searchBlogs", function(req, res){
+  const {searchTerm} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE isPublished = TRUE AND title LIKE ? ORDER BY lastUpdated DESC LIMIT 60";
+  let inserts = []
+  inserts[0] = "%" + searchTerm + "%";
+
+  blogQuery = mysql.format(blogQuery, inserts);
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(err);
+      res.send("err");
+    }
+
+    let urls = results.map((row) => getURL(results[0].username + "'s "  + row.idNum + "mainpic.jpg"));
+    //author + "'s "  + id + "mainpic.jpg");
+
+    for(let i = 0; i < urls.length; i++){
+      results[i].mainPicURL = urls[i];
+    }
+    console.log(blogQuery);
+
+    res.json(results);
+  })
+})
+
 function copyS3Object(sourceKey, destKey){
   let source = "/" + bucketName + "/" + sourceKey;
 
