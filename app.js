@@ -1245,13 +1245,14 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     // just add the photos raw. The rest will figure it out
     imageIndex = 0;
 
+    if(req.files.photos != undefined){
+      for(let i = 0; i < req.files.photos.length; i++){
+        while(usedKeysSet.has(imageIndex)){
+          imageIndex++;
+        }
 
-    for(let i = 0; i < req.files.photos.length; i++){
-      while(usedKeysSet.has(imageIndex)){
-        imageIndex++;
+        uploadS3File(req.files.photos[i], author + "'s "  + id + "pic" + imageIndex);
       }
-
-      uploadS3File(req.files.photos[i], author + "'s "  + id + "pic" + imageIndex);
     }
 
     // update title
