@@ -1168,7 +1168,6 @@ const blogUpdate = upload.fields([{ name: 'data', maxCount: 1 }, { name: 'mainPh
 // photos is the photos in the blog
 app.post("/updateBlog", blogUpdate, function(req, res){
   const{token, id, title} = req.query;
-  console.log(req.query);
 
   let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
 
@@ -1191,7 +1190,6 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     }
 
     let author = results[0].username
-    console.log(results[0]);
 
     // upload contentState
     uploadS3Text(req.body.data, author + "'s " + id + ".json");
@@ -1205,10 +1203,60 @@ app.post("/updateBlog", blogUpdate, function(req, res){
 
 
     // copy all images gotten from aws
+    //console.log(JSON.parse(req.body.data).entityMap);
+
+    let map = JSON.parse(req.body.data).entityMap;
+    let entityIndex = 0;
+    let imageIndex = 0;
+
+    // we have to start at the end, and move back to the front
+    // setting the indexes properly
+    while(map[entityIndex] !== undefined){
+      if(map[entityIndex].type === "IMAGE"){
+        imageIndex++;
+      }
+      entityIndex++;
+    }
+    entityIndex--;
+    imageIndex--;
+    let usedKeysSet = new Set();
+    
+    // we are now working on copying the things
+
+    while(map[entityIndex] !== undefined){
+      let entity = map[entityIndex];
+            
+      if(entity.originalIndex !== undefined){
+        // this was stored in the aws s3 already. Move it to its new place
+        // author + "'s "  + id + "pic" + i
+        let oldKey = author + "'s "  + id + "pic" + entity.originalIndex
+        let newKey = author + "'s "  + id + "pic" + imageIndex;
+        usedKeysSet.add(imageIndex);
+        //console.log(oldKey);
+        //console.log(newKey);
+        copyS3Object(oldKey, newKey);
+      }
+
+      //console.log(entity.originalIndex);
+      if(entity.type === "IMAGE"){
+        imageIndex--;
+      }
+
+      entityIndex--;
+    }
 
 
-    // update n
+    // just add the photos raw. The rest will figure it out
+    imageIndex = 0;
 
+    console.log(usedKeysSet);
+    for(let i = 0; i < req.files.photos.length; i++){
+      while(usedKeysSet.has(imageIndex)){
+        imageIndex++;
+      }
+
+      uploadS3File(req.files.photos[i], author + "'s "  + id + "pic" + imageIndex);
+    }
 
     // update title
     let updateQuery = "UPDATE blogs SET title = ? WHERE author = ? AND idNum = ?"
@@ -1217,7 +1265,6 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     inserts[2] = id;
 
     updateQuery = mysql.format(updateQuery,inserts);
-    console.log(inserts);
 
     pool.query(updateQuery, (updateErr, updateResults) =>{
       if(updateErr){
@@ -1239,6 +1286,10 @@ app.get("/copyTest", function(req,res){
 
 function copyS3Object(sourceKey, destKey){
   let source = "/" + bucketName + "/" + sourceKey;
+
+  if(sourceKey === destKey){
+    return "same";
+  }
   var params = {
     Bucket: bucketName,
     CopySource: source, 
