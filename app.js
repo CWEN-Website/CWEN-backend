@@ -997,6 +997,116 @@ app.get("/getBlogPhotos", function(req, res){
   })
 })
 
+app.get("/getBlogContentPreview", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }else{
+      title = results[0].title
+
+      let awsKey = author + "'s "  + id + ".json";
+
+      getS3Text(awsKey).then((json) => JSON.parse(json))
+        .then((content) => {
+          content.sqlStuff = results[0];
+          res.json(content)
+        });
+    }
+  })
+})
+
+app.get("/getBlogMainPhotoPreview", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }else{
+      title = results[0].title
+
+      let awsKey = author + "'s "  + id + "mainpic.jpg";
+
+      let url = getURL(awsKey)
+      
+      res.send(url);
+    }
+  })
+})
+
+app.get("/getBlogPhotosPreview", function(req, res){
+  const{author,id} = req.query;
+
+  let blogQuery = "SELECT * FROM blogs WHERE (author = ? AND idNum = ?)"
+
+
+  let inserts = []
+  inserts[0] = author;
+  inserts[1] = parseInt(id);
+  let title = ""
+
+  blogQuery = mysql.format(blogQuery, inserts)
+
+  pool.query(blogQuery, (err, results) => {
+    if(err){
+      console.log(blogQuery);
+      console.log(err);
+      res.send(err);
+    }
+
+
+    if(results.length === 0){
+      res.send("unfound");
+    }else{
+      let numberArray = [];
+      let numPhotos = results[0].numPhotos;
+      title = results[0].title
+      
+
+      for(let i = 0; i < numPhotos; i++){
+        numberArray[i] = i;
+      }
+
+      let urlArrays = numberArray.map((element) => getURL(author + "'s "  + id + "pic" + element))
+
+      res.json(urlArrays);
+    }
+  })
+})
+
 app.get("/getUnpublishedBlogContent", function(req, res){ 
   const{token,id} = req.query;
 
