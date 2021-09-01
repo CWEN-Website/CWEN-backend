@@ -1203,7 +1203,6 @@ app.post("/updateBlog", blogUpdate, function(req, res){
 
 
     // copy all images gotten from aws
-    //console.log(JSON.parse(req.body.data).entityMap);
 
     let map = JSON.parse(req.body.data).entityMap;
     let entityIndex = 0;
@@ -1232,12 +1231,9 @@ app.post("/updateBlog", blogUpdate, function(req, res){
         let oldKey = author + "'s "  + id + "pic" + entity.originalIndex
         let newKey = author + "'s "  + id + "pic" + imageIndex;
         usedKeysSet.add(imageIndex);
-        //console.log(oldKey);
-        //console.log(newKey);
         copyS3Object(oldKey, newKey);
       }
 
-      //console.log(entity.originalIndex);
       if(entity.type === "IMAGE"){
         imageIndex--;
       }
@@ -1249,7 +1245,6 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     // just add the photos raw. The rest will figure it out
     imageIndex = 0;
 
-    console.log(usedKeysSet);
     for(let i = 0; i < req.files.photos.length; i++){
       while(usedKeysSet.has(imageIndex)){
         imageIndex++;
