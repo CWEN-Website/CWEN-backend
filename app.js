@@ -1245,6 +1245,7 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     // just add the photos raw. The rest will figure it out
     imageIndex = 0;
 
+
     for(let i = 0; i < req.files.photos.length; i++){
       while(usedKeysSet.has(imageIndex)){
         imageIndex++;
@@ -1254,10 +1255,11 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     }
 
     // update title
-    let updateQuery = "UPDATE blogs SET title = ? WHERE author = ? AND idNum = ?"
+    let updateQuery = "UPDATE blogs SET title = ?, lastUpdated = ? WHERE author = ? AND idNum = ?"
     inserts[0] = title;
-    inserts[1] = author;
-    inserts[2] = id;
+    inserts[0] = new Date();
+    inserts[2] = author;
+    inserts[3] = id;
 
     updateQuery = mysql.format(updateQuery,inserts);
 
@@ -1273,11 +1275,53 @@ app.post("/updateBlog", blogUpdate, function(req, res){
   })
 })
 
-app.get("/copyTest", function(req,res){
-  copyS3Object("royhe62's Various Things6pic1", "royhe62's 6pic1")
-    .then((data) => res.send(data))
-    .catch((err) => res.send(err));
+app.get("/allBlogs", function(req, res){
+  const {token} = req.query
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+  console.log(token);
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    let blogQuery = "SELECT * FROM blogs WHERE author = ? ORDER BY lastUpdated"
+    inserts[0] = results[0].username
+    
+    blogQuery = mysql.format(blogQuery, inserts);
+
+    pool.query(blogQuery, (blogErr, blogRes) =>{
+      if(blogErr){
+        console.log(blogQuery);
+        console.log(blogErr);
+        return res.end("err");
+      }
+      let urls = blogRes.map((row) => getURL(results[0].username + "'s "  + row.idNum + "mainpic.jpg"));
+      //author + "'s "  + id + "mainpic.jpg");
+
+      for(let i = 0; i < urls.length; i++){
+        blogRes[i].mainPicURL = urls[i];
+      }
+      
+      res.json(blogRes);
+    })
+  })
 })
+
 
 function copyS3Object(sourceKey, destKey){
   let source = "/" + bucketName + "/" + sourceKey;
