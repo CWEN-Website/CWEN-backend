@@ -1323,6 +1323,49 @@ app.get("/allBlogs", function(req, res){
   })
 })
 
+app.get("/publish", function(req, res){
+  const {token, id} = req.query;
+
+  let tokenQuery = "SELECT username FROM login WHERE passHash = ?"
+
+  let inserts = [];
+  console.log(token);
+
+  // decrypt the token to get the salted hash
+  inserts[0] = aes256.decrypt(data.privateKey, token);
+
+  tokenQuery = mysql.format(tokenQuery, inserts);
+
+  pool.query(tokenQuery, (err, results) => {
+    if(err){
+      console.log(tokenQuery);
+      console.log(err);
+      return res.end("err");
+    }
+
+    if(results.length === 0){
+      res.send("unfound");
+    }
+
+    let publishquery = "UPDATE blogs SET isPublished = TRUE WHERE author = ? AND idNum = ?"
+
+    inserts[0] = results[0].username;
+    inserts[1] = id;
+
+    publishquery = mysql.format(publishquery, inserts);
+
+    pool.query(publishquery, (error, res) => {
+      if(error){
+        console.log(publishquery);
+        console.log(error);
+        res.send("err");
+      }else{
+        res.send("published");
+      }
+    })
+  })
+})
+
 
 function copyS3Object(sourceKey, destKey){
   let source = "/" + bucketName + "/" + sourceKey;
