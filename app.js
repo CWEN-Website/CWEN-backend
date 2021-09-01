@@ -1258,7 +1258,7 @@ app.post("/updateBlog", blogUpdate, function(req, res){
     // update title
     let updateQuery = "UPDATE blogs SET title = ?, lastUpdated = ? WHERE author = ? AND idNum = ?"
     inserts[0] = title;
-    inserts[0] = new Date();
+    inserts[1] = new Date();
     inserts[2] = author;
     inserts[3] = id;
 
