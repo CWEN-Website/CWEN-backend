@@ -1150,7 +1150,7 @@ app.get("/getUnpublishedBlogContent", function(req, res){
         title = results[0].title
 
         let awsKey = author + "'s "  + id + ".json";
-
+        // first replace fixes apostraphes
         getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"\\\\'").replace(/\\n/g, " ")))
           .then((content) => {
             content.sqlStuff = results[0];
