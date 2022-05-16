@@ -902,11 +902,8 @@ app.get("/getBlogContent", function(req, res){
 
   blogQuery = mysql.format(blogQuery, inserts)
 
-  console.log(blogQuery);
-
   pool.query(blogQuery, (err, results) => {
     if(err){
-      console.log(blogQuery);
       console.log(err);
       res.send(err);
     }
@@ -942,7 +939,6 @@ app.get("/getBlogMainPhoto", function(req, res){
 
   pool.query(blogQuery, (err, results) => {
     if(err){
-      console.log(blogQuery);
       console.log(err);
       res.send(err);
     }
@@ -976,7 +972,6 @@ app.get("/getBlogPhotos", function(req, res){
 
   pool.query(blogQuery, (err, results) => {
     if(err){
-      console.log(blogQuery);
       console.log(err);
       res.send(err);
     }
