@@ -657,7 +657,7 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
 
 // http://localhost:4000/join?name=Test+Name&email=testcwenaaa@gmail.com&phoneNum=256123456789&buisness=test+LLP&description=A+Test+for+stuff&region=Northern&district=Buikew&town=Buikew
 app.get("/join", function(req, res){
-  const {name, email, phoneNum, buisness, description, region, district, town} = req.query;
+  const {name, email, phoneNum, business, description, region, district, town} = req.query;
 
   let joinQuery = "INSERT INTO members VALUES(?,?,?,?,?,?,?,?)"
   let inserts = [];
@@ -665,13 +665,15 @@ app.get("/join", function(req, res){
   inserts[0] = name;
   inserts[1] = email;
   inserts[2] = phoneNum;
-  inserts[3] = buisness;
+  inserts[3] = business;
   inserts[4] = "https://cwen-storage.s3.us-east-2.amazonaws.com/descripton+of+" + email +"'s+buisness.txt";
   inserts[5] = region;
   inserts[6] = district;
   inserts[7] = town;
 
   joinQuery = mysql.format(joinQuery, inserts);
+
+
 
   pool.query(joinQuery, (err, results) => {
     if(err){
@@ -685,11 +687,35 @@ app.get("/join", function(req, res){
 
 
     }else{
-        // create txt filestream.
-      let buf = Buffer.from(description);
-      uploadS3Text(buf, "descripton of " + email +"'s buisness.txt", true)
-      .then(res.send("Succes!"));
-    
+        let htmlMessage = "We have a signup from " + name +
+          "<br>Email: " + email + 
+          "<br>Phone Number: " + phoneNum + 
+          "<br>Buisness Name: " + business + 
+          "<br>Buisness Description: " + description + 
+          "<br>Region: "+ region + 
+          "<br>District: "+ district + 
+          "<br>Town: "+ town; 
+
+        var mailOptions = {
+          from: emailAddress,
+          to: "info@cwen.or.ug",
+          subject: 'Signup Recieved',
+          html: htmlMessage
+        };
+
+        transporter.sendMail(mailOptions, function(error, info){
+          if (error) {
+            console.log(error);
+            res.end("email error");
+          } else {
+            console.log('Email sent: ' + info.response);
+            let buf = Buffer.from(description);
+      
+      
+            uploadS3Text(buf, "descripton of " + email +"'s buisness.txt", true)
+            .then(res.send("Succes!"));
+          }
+        });
     }})
 })
 
