@@ -887,6 +887,8 @@ app.post("/newBlog", blogUpload, function(req, res){
   })
 })
 
+//        getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
+
 app.get("/getBlogContent", function(req, res){
   const{author,id} = req.query;
 
@@ -899,6 +901,8 @@ app.get("/getBlogContent", function(req, res){
   let title = ""
 
   blogQuery = mysql.format(blogQuery, inserts)
+
+  console.log(blogQuery);
 
   pool.query(blogQuery, (err, results) => {
     if(err){
@@ -914,7 +918,7 @@ app.get("/getBlogContent", function(req, res){
 
       let awsKey = author + "'s "  + id + ".json";
 
-      getS3Text(awsKey).then((json) => JSON.parse(json))
+      getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
         .then((content) => {
           content.sqlStuff = results[0];
           res.json(content)
