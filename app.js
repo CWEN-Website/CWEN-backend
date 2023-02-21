@@ -942,19 +942,23 @@ app.get("/getBlogContent", function(req, res){
       let awsKey = author + "'s "  + id + ".json";
 
       getS3Text(awsKey)
-      .then((text)  => {
-        dash = String.fromCharCode(98,00,19); // supposed to be dash
-        appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
-        fixed = text.replaceAll(dash, "-")
-        fixed = text.replaceAll(appostrophe, "'")
+          .then((text)  => {
 
-        return fixed
-      })
-      .then((json) => {
-        content = JSON.parse(json)
-        content.sqlStuff = results[0];
-        res.json(content)
-      })
+            dash = String.fromCharCode(98,00,19); // supposed to be dash
+            appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
+            appostrophe2 = String.fromCharCode(98, 0, 25);     // supposed to be "'"
+
+            fixed = text.replaceAll(dash, "-")
+            fixed = fixed.replaceAll(appostrophe, "'")
+            fixed = fixed.replaceAll(appostrophe2, "'")
+
+            return fixed
+          })
+          .then((json) => {
+            content = JSON.parse(json)
+            content.sqlStuff = results[0];
+            res.json(content)
+          })
 
       /*
       getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
@@ -1196,8 +1200,12 @@ app.get("/getUnpublishedBlogContent", function(req, res){
           .then((text)  => {
             dash = String.fromCharCode(98,00,19); // supposed to be dash
             appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
+            appostrophe2 = String.fromCharCode(98, 0, 25);     // supposed to be "'"
+
             fixed = text.replaceAll(dash, "-")
-            fixed = text.replaceAll(appostrophe, "'")
+            fixed = fixed.replaceAll(appostrophe, "'")
+            fixed = fixed.replaceAll(appostrophe2, "'")
+
             return fixed
           })
           .then((json) => {
