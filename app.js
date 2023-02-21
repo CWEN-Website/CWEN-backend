@@ -942,13 +942,18 @@ app.get("/getBlogContent", function(req, res){
       let awsKey = author + "'s "  + id + ".json";
 
       getS3Text(awsKey)
-          .then((text)  => {
-            dash = String.fromCharCode(98,00,19); // supposed to be dash
-            appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
-            fixed = text.replaceAll(dash, "-")
-            fixed = text.replaceAll(appostrophe, "'")
+      .then((text)  => {
+        dash = String.fromCharCode(98,00,19); // supposed to be dash
+        appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
+        fixed = text.replaceAll(dash, "-")
+        fixed = text.replaceAll(appostrophe, "'")
 
-            res.json(fixed)
+        return fixed
+      })
+      .then((json) => {
+        content = JSON.parse(json)
+        content.sqlStuff = results[0];
+        res.json(content)
       })
 
       /*
@@ -1193,9 +1198,14 @@ app.get("/getUnpublishedBlogContent", function(req, res){
             appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
             fixed = text.replaceAll(dash, "-")
             fixed = text.replaceAll(appostrophe, "'")
-
-            res.json(fixed)
+            return fixed
           })
+          .then((json) => {
+            content = JSON.parse(json)
+            content.sqlStuff = results[0];
+            res.json(content)
+          })
+          
         // first replace fixes apostraphes
         
         /*
