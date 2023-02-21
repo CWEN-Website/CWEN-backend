@@ -1174,13 +1174,25 @@ app.get("/getUnpublishedBlogContent", function(req, res){
       }else{
         title = results[0].title
 
-        let awsKey = author + "'s "  + id + ".json";
+        let awsKey = author + "'s "  + id + ".json"
+        console.log("Hi")
+        getS3Text(awsKey)
+          .then((text)  => {
+            dash = String.fromCharCode(98,00,19); // supposed to be dash
+            appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
+            fixed = text.replaceAll(bad, "-")
+            fixed = text.replaceAll(appostrophe, "'")
+
+            res.json(fixed)
+          })
         // first replace fixes apostraphes
+        
+        /*
         getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
           .then((content) => {
             content.sqlStuff = results[0];
             res.json(content)
-          })
+          })*/
       }
     })
   })
