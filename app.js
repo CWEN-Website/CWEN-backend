@@ -947,7 +947,6 @@ app.get("/getBlogContent", function(req, res){
         appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
         fixed = text.replaceAll(dash, "-")
         fixed = text.replaceAll(appostrophe, "'")
-        console.log(JSON.parse(fixed))
 
         return fixed
       })
@@ -1199,8 +1198,6 @@ app.get("/getUnpublishedBlogContent", function(req, res){
             appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
             fixed = text.replaceAll(dash, "-")
             fixed = text.replaceAll(appostrophe, "'")
-            console.log(JSON.parse(fixed))
-
             return fixed
           })
           .then((json) => {
