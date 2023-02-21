@@ -657,7 +657,7 @@ app.post('/updateMonth', upload.array('photos', 12), function (req, res, next) {
 
 // http://localhost:4000/join?name=Test+Name&email=testcwenaaa@gmail.com&phoneNum=256123456789&buisness=test+LLP&description=A+Test+for+stuff&region=Northern&district=Buikew&town=Buikew
 app.get("/join", function(req, res){
-  const {name, email, phoneNum, buisness, description, region, district, town} = req.query;
+  const {name, email, phoneNum, business, description, region, district, town} = req.query;
 
   let joinQuery = "INSERT INTO members VALUES(?,?,?,?,?,?,?,?)"
   let inserts = [];
@@ -665,13 +665,15 @@ app.get("/join", function(req, res){
   inserts[0] = name;
   inserts[1] = email;
   inserts[2] = phoneNum;
-  inserts[3] = buisness;
+  inserts[3] = business;
   inserts[4] = "https://cwen-storage.s3.us-east-2.amazonaws.com/descripton+of+" + email +"'s+buisness.txt";
   inserts[5] = region;
   inserts[6] = district;
   inserts[7] = town;
 
   joinQuery = mysql.format(joinQuery, inserts);
+
+
 
   pool.query(joinQuery, (err, results) => {
     if(err){
@@ -685,11 +687,35 @@ app.get("/join", function(req, res){
 
 
     }else{
-        // create txt filestream.
-      let buf = Buffer.from(description);
-      uploadS3Text(buf, "descripton of " + email +"'s buisness.txt", true)
-      .then(res.send("Succes!"));
-    
+        let htmlMessage = "We have a signup from " + name +
+          "<br>Email: " + email + 
+          "<br>Phone Number: " + phoneNum + 
+          "<br>Buisness Name: " + business + 
+          "<br>Buisness Description: " + description + 
+          "<br>Region: "+ region + 
+          "<br>District: "+ district + 
+          "<br>Town: "+ town; 
+
+        var mailOptions = {
+          from: emailAddress,
+          to: "info@cwen.or.ug",
+          subject: 'Signup Recieved',
+          html: htmlMessage
+        };
+
+        transporter.sendMail(mailOptions, function(error, info){
+          if (error) {
+            console.log(error);
+            res.end("email error");
+          } else {
+            console.log('Email sent: ' + info.response);
+            let buf = Buffer.from(description);
+      
+      
+            uploadS3Text(buf, "descripton of " + email +"'s buisness.txt", true)
+            .then(res.send("Succes!"));
+          }
+        });
     }})
 })
 
@@ -887,6 +913,8 @@ app.post("/newBlog", blogUpload, function(req, res){
   })
 })
 
+//        getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
+
 app.get("/getBlogContent", function(req, res){
   const{author,id} = req.query;
 
@@ -902,7 +930,6 @@ app.get("/getBlogContent", function(req, res){
 
   pool.query(blogQuery, (err, results) => {
     if(err){
-      console.log(blogQuery);
       console.log(err);
       res.send(err);
     }
@@ -914,11 +941,22 @@ app.get("/getBlogContent", function(req, res){
 
       let awsKey = author + "'s "  + id + ".json";
 
-      getS3Text(awsKey).then((json) => JSON.parse(json))
+      getS3Text(awsKey)
+          .then((text)  => {
+            dash = String.fromCharCode(98,00,19); // supposed to be dash
+            appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
+            fixed = text.replaceAll(dash, "-")
+            fixed = text.replaceAll(appostrophe, "'")
+
+            res.json(fixed)
+      })
+
+      /*
+      getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
         .then((content) => {
           content.sqlStuff = results[0];
           res.json(content)
-        });
+        });*/
     }
   })
 })
@@ -938,7 +976,6 @@ app.get("/getBlogMainPhoto", function(req, res){
 
   pool.query(blogQuery, (err, results) => {
     if(err){
-      console.log(blogQuery);
       console.log(err);
       res.send(err);
     }
@@ -972,7 +1009,6 @@ app.get("/getBlogPhotos", function(req, res){
 
   pool.query(blogQuery, (err, results) => {
     if(err){
-      console.log(blogQuery);
       console.log(err);
       res.send(err);
     }
@@ -1149,13 +1185,25 @@ app.get("/getUnpublishedBlogContent", function(req, res){
       }else{
         title = results[0].title
 
-        let awsKey = author + "'s "  + id + ".json";
+        let awsKey = author + "'s "  + id + ".json"
+        console.log("Hi")
+        getS3Text(awsKey)
+          .then((text)  => {
+            dash = String.fromCharCode(98,00,19); // supposed to be dash
+            appostrophe = String.fromCharCode(0, 19);     // supposed to be "'"
+            fixed = text.replaceAll(dash, "-")
+            fixed = text.replaceAll(appostrophe, "'")
+
+            res.json(fixed)
+          })
         // first replace fixes apostraphes
-        getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"\\\\'").replace(/\\n/g, " ")))
+        
+        /*
+        getS3Text(awsKey).then((json) => JSON.parse(json.replace(/b\u0000\u0019/g,"'").replace(/\\n/g, " ")))
           .then((content) => {
             content.sqlStuff = results[0];
             res.json(content)
-          })
+          })*/
       }
     })
   })
